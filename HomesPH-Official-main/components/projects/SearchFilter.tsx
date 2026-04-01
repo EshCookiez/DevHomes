@@ -158,11 +158,11 @@ export default function SearchFilter() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-[27.83px] w-full max-w-[1327px]">
       {/* Top Row: Search Controls */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center">
+      <div className="flex flex-col lg:flex-row gap-[10.05px] items-center">
         {/* Location Input Group */}
-        <div className="relative flex-1" ref={suggestionsRef}>
+        <div className="relative flex-1 lg:flex-none" ref={suggestionsRef}>
           <div className="w-full lg:w-[685px] flex items-center border border-[#001392] rounded-lg pl-4 pr-1.5 h-[55px] bg-white">
             <Search size={20} className="text-[#1428ae] mr-3 shrink-0" />
             <input
@@ -170,10 +170,10 @@ export default function SearchFilter() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-              placeholder="City, community, or building"
-              className="w-full text-[22px] focus:outline-none text-[#002143] placeholder-[#002143] font-outfit font-light bg-transparent"
+              placeholder="City, community or building"
+              className="w-full text-[20px] focus:outline-none text-[#002143] placeholder-[#002143] font-outfit font-light bg-transparent"
             />
-            <button type="submit" className="w-[115px] h-[45px] shrink-0 flex items-center justify-center gap-3 rounded-[10px] px-6 text-[18px] text-[#FFFFFF] font-outfit font-light bg-[#1428AE] cursor-pointer hover:bg-[#001392] transition-colors">
+            <button type="submit" className="w-[115px] h-[45px] shrink-0 flex items-center justify-center gap-3 rounded-[10px] text-[18px] text-[#FFFFFF] font-outfit font-medium bg-[#1428AE] cursor-pointer hover:bg-[#001392] transition-colors">
               Search
             </button>
           </div>
@@ -238,14 +238,14 @@ export default function SearchFilter() {
         </div>
 
         {/* Residential Dropdown */}
-        <div className="relative w-[197.04px] lg:w-48 h-[55.29px] shrink-0" ref={typeRef}>
+        <div className="relative w-full lg:w-[197.04px] h-[55px] lg:h-[55.29px] shrink-0" ref={typeRef}>
           <button
             type="button"
             onClick={() => { setTypeOpen(!typeOpen); setBedsOpen(false); setMoreOpen(false); }}
             className={`w-full h-full border ${typeOpen ? 'border-[#1428AE]' : 'border-[#D3D3D3]'} rounded-lg px-4 flex items-center justify-between text-[22px] text-[#002143] font-outfit font-light bg-white hover:border-gray-300 transition-colors`}
           >
             <span className="truncate">{resSelections.length > 0 ? resSelections[0] + (resSelections.length > 1 ? ` (+${resSelections.length - 1})` : '') : 'Residential'}</span>
-            <ChevronDown size={16} className={`text-gray-500 transition-transform ${typeOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={28} className={`text-gray-500 transition-transform shrink-0 ${typeOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {typeOpen && (
@@ -303,7 +303,7 @@ export default function SearchFilter() {
         </div>
 
         {/* Beds & Baths Dropdown */}
-        <div className="relative w-full lg:w-48 h-[55px] shrink-0" ref={bedsRef}>
+        <div className="relative w-full lg:w-[217.15px] h-[55px] lg:h-[55.29px] shrink-0" ref={bedsRef}>
           <button
             type="button"
             onClick={() => { setBedsOpen(!bedsOpen); setTypeOpen(false); setMoreOpen(false); }}
@@ -315,7 +315,7 @@ export default function SearchFilter() {
                 : 'Beds & Baths'
               }
             </span>
-            <ChevronDown size={16} className={`text-gray-500 transition-transform ${bedsOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={28} className={`text-gray-500 transition-transform shrink-0 ${bedsOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {bedsOpen && (
@@ -373,14 +373,14 @@ export default function SearchFilter() {
         </div>
 
         {/* More Filter Dropdown */}
-        <div className="relative shrink-0" ref={moreRef}>
+        <div className="relative w-full lg:w-[197.04px] h-[55px] lg:h-[55.29px] shrink-0" ref={moreRef}>
           <button
             type="button"
             onClick={() => { setMoreOpen(!moreOpen); setTypeOpen(false); setBedsOpen(false); }}
-            className={`w-full lg:w-auto h-[55px] flex items-center justify-center gap-3 border ${moreOpen ? 'border-[#1428AE] text-[#1428AE]' : 'border-[#D3D3D3] text-[#002143]'} rounded-lg px-6 text-[22px] font-outfit font-light hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer bg-white`}
+            className={`w-full h-full flex items-center justify-between gap-3 border ${moreOpen ? 'border-[#1428AE] text-[#1428AE]' : 'border-[#D3D3D3] text-[#002143]'} rounded-lg px-4 text-[22px] font-outfit font-light hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer bg-white`}
           >
-            More Filter
-            <SlidersHorizontal size={20} className={moreOpen ? 'text-[#1428AE]' : 'text-[#002143]'} />
+            <span>More Filter</span>
+            <SlidersHorizontal size={20} className={`shrink-0 ${moreOpen ? 'text-[#1428AE]' : 'text-[#002143]'}`} />
           </button>
 
           {moreOpen && (
@@ -466,7 +466,7 @@ export default function SearchFilter() {
       </div>
 
       {/* Bottom Row: Action Links */}
-      <div className="flex justify-end gap-6 text-xs font-bold text-[#1428ae] mt-1 pr-2">
+      <div className="flex justify-end gap-[30px] w-full">
         <button
           type="button"
           onClick={() => {
