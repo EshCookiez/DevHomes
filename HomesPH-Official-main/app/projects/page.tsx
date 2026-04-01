@@ -5,10 +5,13 @@ import { getSiteSettings } from '@/lib/site-settings'
 import { getPublicProjects } from '@/lib/projects-public'
 import AdBanner from '@/components/ui/AdBanner'
 import { MapPin, BedDouble, Bath, Heart, Share2, Mail, Phone, MessageCircle, ChevronLeft, ChevronRight, LayoutList, Map, Bell, SearchX } from 'lucide-react'
+import UnifiedListingCard from '@/components/listings/UnifiedListingCard'
 import SearchFilter from '@/components/projects/SearchFilter'
 import SortDropdown from '@/components/projects/SortDropdown'
 import ProjectMapView from '@/components/projects/ProjectMapView'
 import ViewToggle from '@/components/projects/ViewToggle'
+import PropertyHeader from '@/components/listings/PropertyHeader'
+import ListingSidebar from '@/components/listings/ListingSidebar'
 import React from 'react'
 
 const fmt = (n?: number | null) => n ? `₱ ${Number(n).toLocaleString()}` : null
@@ -182,7 +185,6 @@ export default async function ProjectsPage(
         socialLinks={settings.socialLinks}
       />
 
-      {/* ── Search Bar Section ── */}
       <div className="bg-white border-b border-gray-100 py-6 w-full relative z-20 overflow-visible min-h-fit">
         <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 xl:px-24 2xl:pl-[296px] 2xl:pr-[297px]">
           <SearchFilter />
@@ -200,144 +202,61 @@ export default async function ProjectsPage(
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="flex-1">
               {/* ── Property Header Section ── */}
-              <div className="mb-10">
-                <nav className="flex items-center gap-2 text-[13px] text-gray-400 mb-5 font-medium uppercase tracking-wider">
-                  <span className="text-[#002143]">For Sale:</span>
-                  <Link href="/projects" className="text-[#002143] hover:text-[#002143] transition-colors">Philippine Properties</Link>
-                </nav>
-
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-                  <h1 className="text-[35px] text-[#002143] tracking-tight font-outfit font-normal">
-                    Properties for sale in Philippines
-                  </h1>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <SortDropdown />
-
-                    {/* View Toggle */}
-                    <ViewToggle />
-                  </div>
-                </div>
-
-                {/* Location Filters Bar */}
-                <div className="bg-white rounded-[10px] border border-[#D3D3D3] px-5 flex flex-col md:flex-row items-center justify-between gap-4 h-auto md:h-[65px]">
-                  <div className="flex flex-wrap items-center gap-x-12 gap-y-2 text-[18px] font-light text-[#1428ae] font-outfit">
-                    {topLocations.map(([loc, count]) => (
-                      <Link
-                        key={loc}
-                        href={getHref({ location: loc })}
-                        className={`hover:underline ${sp.location === loc ? 'font-medium underline' : ''}`}
-                      >
-                        {loc} <span className="text-[#002143] ml-1.5">({count.toLocaleString()})</span>
-                      </Link>
-                    ))}
-                  </div>
-                  <Link
-                    href={getHref({ location: undefined })}
-                    className="text-[18px] font-medium text-[#1428ae] hover:underline uppercase tracking-widest shrink-0 font-outfit"
-                  >
-                    VIEW ALL LOCATIONS
-                  </Link>
-                </div>
+              <div className="w-full max-w-[1326px]" style={{ marginBottom: '20px' }}>
+                <PropertyHeader
+                  breadcrumbPrefix="For Sale:"
+                  breadcrumbLinkHref="/projects"
+                  title="Properties for sale in Philippines"
+                  topLocations={topLocations.map(([loc, count]) => ({
+                    name: loc,
+                    count,
+                    href: getHref({ location: loc })
+                  }))}
+                  viewAllHref={getHref({ location: undefined })}
+                  selectedLocation={sp.location}
+                />
               </div>
 
 
               {/* ── Projects List ── */}
-              <div className="flex flex-col gap-6">
+              <style dangerouslySetInnerHTML={{ __html: `
+                .listing-card-interactive {
+                  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+                  cursor: pointer;
+                  text-decoration: none;
+                  color: inherit;
+                }
+                .listing-card-interactive:hover {
+                  transform: translateY(-8px);
+                  box-shadow: 0px 20px 40px rgba(0, 33, 67, 0.12);
+                  z-index: 50 !important;
+                }
+              `}} />
+              <div className="flex flex-col" style={{ gap: '20px' }}>
                 {projects.map(p => {
-                  const bedrooms = Math.max(...(p.project_units?.map(u => u.bedrooms ?? 0) ?? [0]))
-                  const bathrooms = Math.max(...(p.project_units?.map(u => u.bathrooms ?? 0) ?? [0]))
-                  const maxArea = Math.max(...(p.project_units?.map(u => u.floor_area_sqm ?? 0) ?? [0]))
+                  const unitGroups = p.project_units && p.project_units.length > 0
+                    ? Array.from(new Set(p.project_units.map(u => u.unit_type))).map(typeName => {
+                        const count = p.project_units?.filter(u => u.unit_type === typeName).length || 0
+                        const isPlural = count > 1
+                        const displayType = isPlural && !typeName.toLowerCase().includes('bedroom') && !typeName.toLowerCase().includes('studio') ? `${typeName}s` : typeName
+                        return { count, typeName: displayType }
+                      })
+                    : []
 
                   return (
-                    <Link
+                    <UnifiedListingCard
                       key={p.id}
+                      variant="projects"
                       href={`/projects/${p.slug}`}
-                      className="group bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row overflow-hidden h-auto md:h-[316px] md:w-[995px] mx-auto lg:mx-0"
-                    >
-                      {/* Left Image Side */}
-                      <div className="relative w-full md:w-[45%] h-64 md:h-full shrink-0 p-4">
-                        <img
-                          src={p.main_image_url ?? `https://picsum.photos/seed/${p.slug}/900/600`}
-                          alt={p.name}
-                          className="w-full h-full object-cover rounded-2xl"
-                        />
-
-                        {/* Dots at bottom */}
-                        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-                          <div className="w-2 h-2 rounded-full bg-white shadow-sm"></div>
-                          <div className="w-2 h-2 rounded-full bg-white/50"></div>
-                          <div className="w-2 h-2 rounded-full bg-white/50"></div>
-                          <div className="w-2 h-2 rounded-full bg-white/50"></div>
-                        </div>
-                        {/* Favorite and Share icons at bottom right */}
-                        <div className="absolute bottom-8 right-8 flex gap-4 text-white">
-                          <Heart size={24} className="hover:text-red-500 transition-colors drop-shadow-lg cursor-pointer" />
-                          <Share2 size={24} className="hover:text-blue-400 transition-colors drop-shadow-lg cursor-pointer" />
-                        </div>
-                      </div>
-
-                      {/* Right Content Side */}
-                      <div className="w-full md:w-[55%] p-8 flex flex-col relative">
-                        {/* Dev Logo */}
-                        <div className="absolute top-8 right-8 h-8 w-24">
-                          <img
-                            src={p.developers_profiles?.logo_url || "https://picsum.photos/seed/dev/200/50"}
-                            className="h-full w-full object-contain object-right"
-                            alt="developer logo"
-                          />
-                        </div>
-
-                        {/* Name & Type */}
-                        <div className="mb-6">
-                          <h3 className="text-[#002143] text-[25px] font-medium leading-tight mb-1">{p.name}</h3>
-                          <p className="text-[#002143] text-[15px] font-light">{p.project_type}</p>
-                        </div>
-
-                        {/* Available Units */}
-                        <div className="mb-4">
-                          <p className="text-[#002143] text-[15px] font-light mb-2 tracking-wide">Available Units:</p>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[#1428AE] text-[15px] font-light">
-                            {p.project_units && p.project_units.length > 0 ? (
-                              Array.from(new Set(p.project_units.map(u => u.unit_type))).map((typeName, idx, arr) => {
-                                const units = p.project_units?.filter(u => u.unit_type === typeName) || [];
-                                const count = units.length;
-                                const isPlural = count > 1;
-                                const displayType = isPlural && !typeName.toLowerCase().includes('bedroom') && !typeName.toLowerCase().includes('studio') ? `${typeName}s` : typeName;
-
-                                return (
-                                  <React.Fragment key={typeName}>
-                                    <span>{count} {displayType}</span>
-                                    {idx < arr.length - 1 && <span className="text-gray-300">|</span>}
-                                  </React.Fragment>
-                                );
-                              })
-                            ) : (
-                              <span className="text-gray-400 italic">No units listed</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Location */}
-                        <div className="flex items-center gap-2 text-[#002143] text-[15px] mb-4 font-light">
-                          <MapPin size={22} className="text-[#002143] shrink-0" />
-                          <span>{p.city_municipality}, {p.province}, Philippines</span>
-                        </div>
-
-                        {/* Buttons */}
-                        <div className="flex items-center gap-4 mt-2">
-                          <button className="flex-1 flex items-center justify-center gap-3 py-3.5 rounded-[10px] bg-[#DFE1FF] text-[#1428AE] font-regular text-[18px] hover:bg-[#D8E2FF] transition-colors">
-                            <Mail size={18} /> Email
-                          </button>
-                          <button className="flex-1 flex items-center justify-center gap-3 py-3.5 rounded-[10px] bg-[#DFE3FF] text-[#1428AE] font-regular text-[18px] hover:bg-[#D8E2FF] transition-colors">
-                            <Phone size={18} /> Call
-                          </button>
-                          <button className="flex-1 flex items-center justify-center gap-3 py-3.5 rounded-[10px] bg-[#E1FFDF] text-[#00A629] font-regular text-[18px] hover:bg-[#D8F0DA] transition-colors">
-                            <MessageCircle size={18} /> WhatsApp
-                          </button>
-                        </div>
-                      </div>
-                    </Link>
+                      imageUrl={p.main_image_url ?? `https://picsum.photos/seed/${p.slug}/900/600`}
+                      developerLogoUrl={p.developers_profiles?.logo_url ?? undefined}
+                      developerName={p.developers_profiles?.developer_name}
+                      location={`${p.city_municipality}, ${p.province}, Philippines`}
+                      projectName={p.name}
+                      projectType={p.project_type ?? ''}
+                      availableUnits={unitGroups}
+                      className="listing-card-interactive"
+                    />
                   )
                 })}
               </div>
@@ -361,49 +280,8 @@ export default async function ProjectsPage(
               )}
             </div>
 
-            {/* ── Sidebar Ads ── */}
-            <div className="hidden lg:flex flex-col gap-6 w-[300px] shrink-0">
-              <div className="sticky top-24 space-y-6">
-                <AdBanner sizes={['300x250']} />
-
-                {/* Property ALERT button */}
-                <button className="w-[300px] h-[56px] border border-[#1428AE] rounded-[10px] flex items-center justify-center gap-3 text-[#1428AE] hover:bg-blue-50 transition-all group">
-                  <Bell size={25} className="fill-[#1428AE] text-[#1428AE]" />
-                  <span className="text-[15px] font-outfit font-normal">ALERT ME OF NEW PROPERTIES</span>
-                </button>
-
-                {/* Recommended searches */}
-                <div>
-                  <div className="w-full h-[35px] bg-[#F4F4F9] rounded-[5px] flex items-center px-4 mb-4">
-                    <span className="text-[#002143] text-[18px] font-outfit font-normal">Recommended searches</span>
-                  </div>
-                  <div className="flex flex-col gap-3.5 px-4">
-                    <Link href="#" className="text-[#002143] text-[15px] font-outfit font-light hover:underline">1 Bedroom Properties for rent in Quezon City</Link>
-                    <Link href="#" className="text-[#002143] text-[15px] font-outfit font-light hover:underline">2 Bedroom Properties for rent in Quezon City</Link>
-                    <Link href="#" className="text-[#002143] text-[15px] font-outfit font-light hover:underline">Apartments for rent in Quezon City</Link>
-                    <Link href="#" className="text-[#1428AE] text-[16px] font-outfit font-medium hover:underline mt-2">View More</Link>
-                  </div>
-                </div>
-
-                {/* Useful Links */}
-                <div>
-                  <div className="w-full h-[35px] bg-[#F4F4F9] rounded-[5px] flex items-center px-4 mb-4">
-                    <span className="text-[#002143] text-[18px] font-outfit font-normal">Useful Links</span>
-                  </div>
-                  <div className="flex flex-col gap-3.5 px-4">
-                    <Link href="#" className="text-[#002143] text-[15px] font-outfit font-light hover:underline">Apartments for rent in the Philippines</Link>
-                    <Link href="#" className="text-[#002143] text-[15px] font-outfit font-light hover:underline">Apartment for sale in the Philippines</Link>
-                    <Link href="#" className="text-[#002143] text-[15px] font-outfit font-light hover:underline">Hotel Apartment for rent in the Philippines</Link>
-                    <Link href="#" className="text-[#002143] text-[15px] font-outfit font-light hover:underline">Villa Compound for sale in the Philippines</Link>
-                  </div>
-                </div>
-
-                {/* Custom ADS Section */}
-                <div className="flex flex-col items-center">
-                  <AdBanner sizes={['300x600']} />
-                </div>
-              </div>
-            </div>
+            {/* ── Sidebar ── */}
+            <ListingSidebar />
           </div>
         )}
       </main>

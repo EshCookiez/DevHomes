@@ -4,7 +4,7 @@ import SiteHeader from '@/components/layout/SiteHeader'
 import SiteFooter from '@/components/layout/SiteFooter'
 import { getSiteSettings } from '@/lib/site-settings'
 import InquiryForm from '@/components/listings/InquiryForm'
-import { MOCK_DEVELOPERS, MOCK_PROJECTS } from '@/lib/mock-data'
+import { getPublicDeveloperBySlug } from '@/lib/developers-public'
 
 const fmt = (n?: number | null) => n ? `₱ ${Number(n).toLocaleString()}` : null
 const fmtRange = (min?: number | null, max?: number | null) => {
@@ -14,13 +14,13 @@ const fmtRange = (min?: number | null, max?: number | null) => {
 }
 
 export default async function DeveloperDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const [settings] = await Promise.all([getSiteSettings()])
+  const { id: slug } = await params
+  const [settings, bundle] = await Promise.all([getSiteSettings(), getPublicDeveloperBySlug(slug)])
 
-  const dev = MOCK_DEVELOPERS.find(d => d.id === Number(id))
-  if (!dev) notFound()
+  if (!bundle) notFound()
 
-  const devProjects = MOCK_PROJECTS.filter(p => p.developer_id === dev.id)
+  const { developer: dev, contacts, addresses, projects: devProjects, contactInformation } = bundle
+  const primaryAddress = addresses[0]?.full_address ?? addresses[0]?.city ?? null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,7 +41,7 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
           <div className="text-center sm:text-left">
             <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-2">Real Estate Developer</p>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white">{dev.developer_name}</h1>
-            <p className="text-white/60 text-sm mt-1.5">{dev.industry} · Est. {dev.founded}</p>
+            <p className="text-white/60 text-sm mt-1.5">{dev.industry}</p>
             {dev.website_url && (
               <a href={dev.website_url} target="_blank" rel="noreferrer"
                 className="inline-block mt-3 text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2">
@@ -54,11 +54,10 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
 
       {/* ── Stats Band ── */}
       <div className="bg-[#1428ae]">
-        <div className="max-w-6xl mx-auto px-4 py-5 grid grid-cols-3 divide-x divide-white/20 text-center">
+        <div className="max-w-6xl mx-auto px-4 py-5 grid grid-cols-2 divide-x divide-white/20 text-center">
           {[
-            { value: `${dev.stats.projects}+`, label: 'Projects' },
-            { value: dev.stats.units >= 1000 ? `${(dev.stats.units / 1000).toFixed(1)}K+` : `${dev.stats.units}+`, label: 'Units Built' },
-            { value: `${dev.stats.provinces}+`, label: 'Provinces' },
+            { value: `${devProjects.length}`, label: 'Projects' },
+            { value: `${new Set(devProjects.map(p => p.province).filter(Boolean)).size}`, label: 'Provinces' },
           ].map(s => (
             <div key={s.label} className="px-4">
               <p className="text-xl font-extrabold text-white">{s.value}</p>
@@ -74,53 +73,55 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">About {dev.developer_name}</h2>
           <p className="text-sm text-gray-600 leading-relaxed">{dev.description}</p>
-          <div className="mt-6 flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2 text-gray-500">
-              <span className="font-semibold text-gray-900">Headquarters:</span> {dev.address}
+          {primaryAddress && (
+            <div className="mt-6 flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-2 text-gray-500">
+                <span className="font-semibold text-gray-900">Headquarters:</span> {primaryAddress}
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* ── Contact + Persons ── */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {dev.contact && (
+          {contactInformation && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-5">Contact Information</h2>
               <dl className="space-y-3 text-sm">
-                {dev.contact.email && (
+                {contactInformation.email && (
                   <div className="flex items-start gap-3">
                     <dt className="text-gray-400 shrink-0 w-28 text-xs uppercase tracking-wider pt-0.5">Email</dt>
-                    <dd><a href={`mailto:${dev.contact.email}`} className="text-[#1428ae] hover:underline">{dev.contact.email}</a></dd>
+                    <dd><a href={`mailto:${contactInformation.email}`} className="text-[#1428ae] hover:underline">{contactInformation.email}</a></dd>
                   </div>
                 )}
-                {dev.contact.primary_mobile && (
+                {contactInformation.primary_mobile && (
                   <div className="flex items-start gap-3">
                     <dt className="text-gray-400 shrink-0 w-28 text-xs uppercase tracking-wider pt-0.5">Mobile</dt>
-                    <dd><a href={`tel:${dev.contact.primary_mobile}`} className="text-gray-700">{dev.contact.primary_mobile}</a></dd>
+                    <dd><a href={`tel:${contactInformation.primary_mobile}`} className="text-gray-700">{contactInformation.primary_mobile}</a></dd>
                   </div>
                 )}
-                {dev.contact.telephone && (
+                {contactInformation.telephone && (
                   <div className="flex items-start gap-3">
                     <dt className="text-gray-400 shrink-0 w-28 text-xs uppercase tracking-wider pt-0.5">Telephone</dt>
-                    <dd><a href={`tel:${dev.contact.telephone}`} className="text-gray-700">{dev.contact.telephone}</a></dd>
+                    <dd><a href={`tel:${contactInformation.telephone}`} className="text-gray-700">{contactInformation.telephone}</a></dd>
                   </div>
                 )}
               </dl>
               <div className="mt-5 flex flex-wrap gap-2">
-                {dev.contact.facebook_url && (
-                  <a href={dev.contact.facebook_url} target="_blank" rel="noreferrer"
+                {contactInformation.facebook_url && (
+                  <a href={contactInformation.facebook_url} target="_blank" rel="noreferrer"
                     className="text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
                     Facebook
                   </a>
                 )}
-                {dev.contact.instagram_url && (
-                  <a href={dev.contact.instagram_url} target="_blank" rel="noreferrer"
+                {contactInformation.instagram_url && (
+                  <a href={contactInformation.instagram_url} target="_blank" rel="noreferrer"
                     className="text-xs px-3 py-1.5 rounded-full bg-pink-50 text-pink-700 hover:bg-pink-100 transition-colors">
                     Instagram
                   </a>
                 )}
-                {(dev.contact as any).linkedin_url && (
-                  <a href={(dev.contact as any).linkedin_url} target="_blank" rel="noreferrer"
+                {contactInformation.linkedin_url && (
+                  <a href={contactInformation.linkedin_url} target="_blank" rel="noreferrer"
                     className="text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-900 hover:bg-blue-100 transition-colors">
                     LinkedIn
                   </a>
@@ -129,17 +130,17 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
             </div>
           )}
 
-          {dev.contact_persons && dev.contact_persons.length > 0 && (
+          {contacts.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-5">Our Team</h2>
               <div className="space-y-4">
-                {dev.contact_persons.map(cp => (
+                {contacts.map(cp => (
                   <div key={cp.id} className="flex items-start gap-4">
                     <div className="h-10 w-10 rounded-full bg-[#1428ae]/10 flex items-center justify-center text-[#1428ae] font-bold text-sm shrink-0">
-                      {cp.full_name[0]}
+                      {(cp.full_name ?? cp.fname ?? '?')[0]}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-900">{cp.full_name}</p>
+                      <p className="text-sm font-bold text-gray-900">{cp.full_name ?? [cp.fname, cp.lname].filter(Boolean).join(' ')}</p>
                       <p className="text-xs text-amber-600 font-medium">{cp.position}</p>
                       <div className="mt-1 flex flex-wrap gap-3 text-xs">
                         {cp.email && <a href={`mailto:${cp.email}`} className="text-[#1428ae] hover:underline">{cp.email}</a>}
