@@ -1,85 +1,110 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { LocationCard, type Location } from './LocationCard'
 
 const LANDING_LOCATION_ORDER = [
-  'bacolod',
-  'bgc',
-  'bohol',
-  'cagayan-de-oro',
-  'cavite',
-  'cebu',
   'davao',
   'gensan',
+  'cagayan-de-oro',
+  'butuan',
+  'surigao',
+  'ozamis',
+  'bohol',
+  'dumaguete',
+  'bacolod',
+  'cebu',
   'iloilo',
+  'bgc',
+  'cavite',
+  'manila',
   'pampanga',
+  'taguig',
+  'laguna',
+  'others',
 ]
 
-const LANDING_LOCATION_ORDER_INDEX = new Map(
-  LANDING_LOCATION_ORDER.map((slug, index) => [slug, index]),
-)
+// Only cycle the URLs that have been successfully mapped/uploaded to the bucket
+const FEATURED_BACKGROUND_SLUGS = ['cebu', 'davao', 'surigao', 'butuan', 'cagayan-de-oro']
+
+const getBgUrl = (slug: string) => {
+  if (slug === 'cebu') {
+    return 'https://rwhtwbbpnhkevhocdmma.supabase.co/storage/v1/object/public/Locations/cebu.png'
+  }
+  if (slug === 'davao') {
+    return 'https://rwhtwbbpnhkevhocdmma.supabase.co/storage/v1/object/public/Locations/Davao.png'
+  }
+  
+  const title =
+    slug === 'cagayan-de-oro'
+      ? 'Cagayan De Oro'
+      : slug === 'bgc'
+      ? 'BGC'
+      : slug.charAt(0).toUpperCase() + slug.slice(1)
+      
+  return `https://rwhtwbbpnhkevhocdmma.supabase.co/storage/v1/object/public/Locations/${encodeURIComponent(title)}.png`
+}
 
 export default function LocationGrid({ locations }: { locations: Location[] }) {
-  const mapWatermarkStyle = {
-    width: '1336px',
-    height: '891px',
-    position: 'absolute' as const,
-    left: 'calc(50% - 1336px/2)',
-    top: '-60px',
-    backgroundColor: '#F2F8FF',
-    WebkitMaskImage: "url('/Pilipinas.png')",
-    maskImage: "url('/Pilipinas.png')",
-    WebkitMaskRepeat: 'no-repeat',
-    maskRepeat: 'no-repeat',
-    WebkitMaskPosition: 'center',
-    maskPosition: 'center',
-    WebkitMaskSize: 'contain',
-    maskSize: 'contain',
-    transformOrigin: 'center center',
-  } as const
+  const [bgIndex, setBgIndex] = useState<number>(0)
 
-  const orderedLocations = [...locations].sort((left, right) => {
-    const leftOrder = LANDING_LOCATION_ORDER_INDEX.get(left.slug) ?? Number.POSITIVE_INFINITY
-    const rightOrder = LANDING_LOCATION_ORDER_INDEX.get(right.slug) ?? Number.POSITIVE_INFINITY
+  // Automatic ambient background slideshow (swaps every 3 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBgIndex((current) => (current + 1) % FEATURED_BACKGROUND_SLUGS.length)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [])
 
-    if (leftOrder !== rightOrder) {
-      return leftOrder - rightOrder
+  const displayLocations = LANDING_LOCATION_ORDER.map((slug, index) => {
+    const existing = locations.find((l) => l.slug === slug)
+    if (existing) return existing
+
+    const formatTitle = (s: string) => {
+      if (s === 'cagayan-de-oro') return 'Cagayan De Oro'
+      if (s === 'bgc') return 'BGC'
+      return s.charAt(0).toUpperCase() + s.slice(1)
     }
 
-    return left.title.localeCompare(right.title)
+    return {
+      id: -(index + 1),
+      title: formatTitle(slug),
+      slug: slug,
+      logo_url: null,
+      description: null,
+    }
   })
 
   return (
-    <section id="locations" className="relative overflow-hidden bg-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-slate-200/80" />
-
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <section
+      id="locations"
+      className="relative overflow-hidden bg-[#0D1019] py-12 md:py-20 xl:block xl:h-[929px] xl:py-0 xl:pt-[100px]"
+    >
+      {/* Automated Background Layers */}
+      {FEATURED_BACKGROUND_SLUGS.map((slug, idx) => (
         <div
-          aria-hidden
-          style={mapWatermarkStyle}
+          key={`bg-${slug}`}
+          className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+            bgIndex === idx ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ backgroundImage: `url('${getBgUrl(slug)}')` }}
         />
-      </div>
+      ))}
+      <div className="absolute inset-0 bg-[#0D1019]/[0.35]" />
+      <div className="absolute inset-x-0 top-0 z-10 h-px bg-slate-200/80" />
 
-      <div className="relative z-10 px-4 py-10 md:px-8 md:py-12 lg:px-12 lg:py-14 xl:px-24 2xl:pl-[296px] 2xl:pr-[296px]">
-        <div className="mx-auto w-full max-w-[1920px]">
-          <div className="mx-auto flex max-w-[1002px] flex-col items-center text-center">
-            <h1 className="font-[family-name:var(--font-outfit)] text-[40px] font-semibold leading-[1] text-[#1428AE] sm:text-[55px] md:text-[65px] lg:text-[75px] lg:leading-[75px]">
-              Your Home Starts Here
-            </h1>
+      {/* Content */}
+      <div className="relative z-10 mx-auto w-full px-4 md:px-8 xl:max-w-[1920px] xl:px-0">
+        <div className="mx-auto flex w-full max-w-[1002px] flex-col items-center text-center">
+          <h1 className="font-[family-name:var(--font-outfit)] text-[40px] font-semibold leading-[1] text-white sm:text-[55px] md:text-[65px] lg:text-[75px] lg:leading-[75px]">
+            Discover Your Ideal Location
+          </h1>
+        </div>
 
-            <p className="mt-[15px] max-w-[831px] font-[family-name:var(--font-outfit)] text-[16px] font-normal leading-[24px] text-[#1428AE] sm:text-[20px] sm:leading-[26px] md:text-[22px] md:leading-[28px] lg:text-[25px] lg:leading-[30px]">
-              Select a location below to explore available properties, condominiums, and
-              investment opportunities.
-            </p>
-
-            <span className="mt-[40px] inline-flex h-[50px] w-[490px] max-w-full items-center justify-center rounded-[10px] bg-[#1428AE]/[0.08] font-[family-name:var(--font-outfit)] text-[25px] font-medium leading-[25px] text-[#1428AE]">
-              STEP 1 — CHOOSE YOUR LOCATION
-            </span>
-          </div>
-
-          <div className="mx-auto mt-12 grid w-full max-w-[1345px] grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {orderedLocations.map((location) => (
-              <LocationCard key={location.id} location={location} />
-            ))}
-          </div>
+        <div className="mx-auto mt-12 grid w-full max-w-[1345px] grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:mt-[80px] xl:gap-x-[28px] xl:gap-y-[25px]">
+          {displayLocations.map((location) => (
+            <LocationCard key={location.id} location={location} />
+          ))}
         </div>
       </div>
     </section>

@@ -61,10 +61,10 @@ const NAV_ITEMS: { label: string; href: string }[] = [
 ]
 
 const LANDING_TOP_BAR_SHELL =
-  'mx-auto flex w-full max-w-[1466px] items-center justify-between px-4 sm:px-6 md:px-8 lg:px-10 min-[1466px]:px-0'
+  'mx-auto flex w-full max-w-[1465px] items-center justify-between px-4 sm:px-6 md:px-[113px] lg:px-0'
 
 const LANDING_MAIN_SHELL =
-  'mx-auto flex w-full max-w-[1346px] items-center px-4 sm:px-6 md:px-8 lg:px-10 min-[1346px]:px-0'
+  'mx-auto flex w-full max-w-[1345px] items-center px-4 sm:px-6 md:px-[287px] lg:px-0'
 
 export default function HomeHeader({
   contactEmail,
@@ -119,7 +119,7 @@ export default function HomeHeader({
   )
 
   const desktopNavClass = isLandingVariant
-    ? 'hidden flex-1 items-center justify-end gap-5 md:flex lg:gap-8 xl:gap-9'
+    ? 'hidden flex-1 items-center justify-end gap-[30px] md:flex'
     : 'hidden flex-1 items-center justify-center gap-2 md:flex'
 
   return (
@@ -129,14 +129,14 @@ export default function HomeHeader({
           <div
             className={
               isLandingVariant
-                ? `${LANDING_TOP_BAR_SHELL} h-[26px]`
+                ? `${LANDING_TOP_BAR_SHELL} h-[40px]`
                 : 'mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-10'
             }
           >
             <div
               className={
                 isLandingVariant
-                  ? 'flex min-w-0 items-center gap-3 md:gap-4 lg:gap-5'
+                  ? 'flex min-w-0 items-center gap-[25px]'
                   : 'flex min-w-0 items-center gap-5'
               }
             >
@@ -145,11 +145,11 @@ export default function HomeHeader({
                   href={`tel:${contactPhone}`}
                   className={
                     isLandingVariant
-                      ? 'flex items-center gap-1.5 text-[11px] font-medium text-white/90 transition-colors hover:text-white'
+                      ? 'flex items-center gap-[5px] font-[family-name:var(--font-outfit)] text-[15px] font-light leading-[15px] text-white transition-opacity hover:opacity-80'
                       : 'flex items-center gap-1.5 text-xs text-blue-100 transition-colors hover:text-white'
                   }
                 >
-                  <PhoneSolid size={isLandingVariant ? 11 : 12} className="shrink-0" />
+                  <PhoneSolid size={isLandingVariant ? 18 : 12} className="shrink-0" />
                   <span className="truncate">{contactPhone}</span>
                 </a>
               )}
@@ -159,24 +159,24 @@ export default function HomeHeader({
                   href={`mailto:${contactEmail}`}
                   className={
                     isLandingVariant
-                      ? 'hidden items-center gap-1.5 text-[11px] font-medium text-white/90 transition-colors hover:text-white md:flex'
+                      ? 'hidden items-center gap-[5px] font-[family-name:var(--font-outfit)] text-[15px] font-light leading-[15px] text-white transition-opacity hover:opacity-80 md:flex'
                       : 'hidden items-center gap-1.5 text-xs text-blue-100 transition-colors hover:text-white sm:flex'
                   }
                 >
-                  <MailSolid size={isLandingVariant ? 11 : 12} className="shrink-0" />
+                  <MailSolid size={isLandingVariant ? 18 : 12} className="shrink-0" />
                   <span className="truncate">{contactEmail}</span>
                 </a>
               )}
 
               {topBarLocationLabel && (
-                <div className="hidden items-center gap-1.5 text-[11px] font-medium text-white/90 lg:flex">
-                  <MapPinSolid size={11} className="shrink-0" />
+                <div className="hidden items-center gap-[5px] font-[family-name:var(--font-outfit)] text-[15px] font-light leading-[15px] text-white lg:flex">
+                  <MapPinSolid size={18} className="shrink-0" />
                   <span className="truncate">{topBarLocationLabel}</span>
                 </div>
               )}
             </div>
 
-            <div className={isLandingVariant ? 'flex items-center gap-2 md:gap-3' : 'flex items-center gap-4'}>
+            <div className={isLandingVariant ? 'flex items-center gap-[10px]' : 'flex items-center gap-4'}>
               {socials.facebook && (
                 <a
                   href={socials.facebook}
@@ -185,11 +185,11 @@ export default function HomeHeader({
                   aria-label="Facebook"
                   className={
                     isLandingVariant
-                      ? 'text-white/90 transition-colors hover:text-white'
+                      ? 'text-white transition-opacity hover:opacity-80'
                       : 'text-blue-200 transition-colors hover:text-white'
                   }
                 >
-                  <Image src="/socialIcons/fb.png" alt="Facebook" width={isLandingVariant ? 12 : 14} height={isLandingVariant ? 12 : 14} />
+                  <Image src="/socialIcons/fb.png" alt="Facebook" width={isLandingVariant ? 18 : 14} height={isLandingVariant ? 18 : 14} />
                 </a>
               )}
 
@@ -201,11 +201,11 @@ export default function HomeHeader({
                   aria-label="Instagram"
                   className={
                     isLandingVariant
-                      ? 'text-white/90 transition-colors hover:text-white'
+                      ? 'text-white transition-opacity hover:opacity-80'
                       : 'text-blue-200 transition-colors hover:text-white'
                   }
                 >
-                  <Image src="/socialIcons/insta.png" alt="Instagram" width={isLandingVariant ? 12 : 14} height={isLandingVariant ? 12 : 14} />
+                  <Image src="/socialIcons/insta.png" alt="Instagram" width={isLandingVariant ? 16 : 14} height={isLandingVariant ? 16 : 14} />
                 </a>
               )}
 
@@ -216,11 +216,11 @@ export default function HomeHeader({
                 aria-label="X / Twitter"
                 className={
                   isLandingVariant
-                    ? 'text-white/90 transition-colors hover:text-white'
+                    ? 'text-white transition-opacity hover:opacity-80'
                     : 'text-blue-200 transition-colors hover:text-white'
                 }
               >
-                <Image src="/socialIcons/X.png" alt="X / Twitter" width={isLandingVariant ? 12 : 14} height={isLandingVariant ? 12 : 14} />
+                <Image src="/socialIcons/X.png" alt="X / Twitter" width={isLandingVariant ? 14 : 14} height={isLandingVariant ? 14 : 14} />
               </a>
             </div>
           </div>
@@ -237,7 +237,7 @@ export default function HomeHeader({
         <div className={isLandingVariant ? LANDING_MAIN_SHELL : 'mx-auto flex max-w-7xl items-center px-4 sm:px-6 lg:px-8'}>
           <div
             className={`flex w-full items-center ${
-              isLandingVariant ? 'h-[64px] gap-6' : 'h-24 gap-8'
+              isLandingVariant ? 'h-[110px] gap-6' : 'h-24 gap-8'
             }`}
           >
             <Link href="/" className="shrink-0 group">
@@ -247,7 +247,7 @@ export default function HomeHeader({
                   alt="HomesPH"
                   className={
                     isLandingVariant
-                      ? 'h-8 w-auto object-contain transition-transform group-hover:scale-[1.02] md:h-9 min-[1280px]:-translate-x-[9px]'
+                      ? 'h-[50px] w-auto object-contain transition-transform group-hover:scale-[1.02]'
                       : 'h-12 w-auto drop-shadow-md transition-transform group-hover:scale-105'
                   }
                 />
@@ -274,10 +274,10 @@ export default function HomeHeader({
                     href={item.href}
                     className={
                       isLandingVariant
-                        ? `text-[14px] font-medium leading-none tracking-[-0.015em] transition-colors ${
+                        ? `font-[family-name:var(--font-outfit)] text-[18px] font-normal leading-[18px] transition-colors ${
                             isActive
-                              ? 'text-[#1428AE]'
-                              : 'text-[#23345f] hover:text-[#1428AE]'
+                              ? 'text-[#002143] font-medium'
+                              : 'text-[#002143] hover:text-[#1428AE]'
                           }`
                         : `relative rounded-xl px-4 py-2.5 text-base font-bold transition-all duration-150 ${
                             isActive
