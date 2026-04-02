@@ -18,35 +18,35 @@ interface SocialLinks {
 const FOOTER_LOGO_URL =
   'https://rwhtwbbpnhkevhocdmma.supabase.co/storage/v1/object/public/homesph/whiteLogo.png'
 
-const DEFAULT_LINKS = [
-  { label: 'Our Company', href: '/our-company' },
-  { label: 'News', href: '/news' },
-  { label: 'Mortgage', href: '/mortgage' },
-  { label: 'Legal', href: '/legal' },
-  { label: 'Tourism', href: '/tourism' },
-  { label: 'Restaurant', href: '/restaurant' },
+const QUICK_LINKS = [
+  { label: 'Home',       href: '/' },
+  { label: 'Buy',        href: '/buy' },
+  { label: 'Rent',       href: '/rent' },
+  { label: 'Projects',   href: '/projects' },
+  { label: 'News',       href: '/news' },
+  { label: 'Contact Us', href: '/our-company' },
 ]
 
 const RESOURCE_LINKS = [
-  { label: 'Event Management', href: '/our-company#event-management' },
+  { label: 'Event Management',    href: '/our-company#event-management' },
   { label: 'Mortgage Calculator', href: '/mortgage' },
-  { label: 'Home Buying Guide', href: '/legal' },
-  { label: 'FAQs', href: '/mortgage#faq' },
-  { label: 'Search Properties', href: '/search' },
-  { label: 'Login', href: '/login' },
-  { label: 'Register', href: '/registration/franchise' },
+  { label: 'Home Buying Guide',   href: '/legal' },
+  { label: 'FAQs',                href: '/mortgage#faq' },
+  { label: 'Search Properties',   href: '/search' },
+  { label: 'Login',               href: '/login' },
+  { label: 'Register',            href: '/registration/franchise' },
 ]
 
 const LEGAL_LINKS = [
-  { label: 'Privacy Policy', href: '/legal#privacy-policy' },
+  { label: 'Privacy Policy',   href: '/legal#privacy-policy' },
   { label: 'Terms of Service', href: '/legal#terms-of-service' },
-  { label: 'Sitemap', href: '/search' },
+  { label: 'Sitemap',          href: '/search' },
 ]
 
 export default function SiteFooter({
   contactEmail,
   contactPhone,
-  links = DEFAULT_LINKS,
+  links,
   socialLinks,
   brandName = 'HomesPH',
   logoUrl,
@@ -66,96 +66,104 @@ export default function SiteFooter({
   let socials: SocialLinks = {}
   if (socialLinks) {
     if (typeof socialLinks === 'string') {
-      try {
-        socials = JSON.parse(socialLinks)
-      } catch {
-        socials = {}
-      }
+      try { socials = JSON.parse(socialLinks) } catch { socials = {} }
     } else {
       socials = socialLinks
     }
   }
 
   return (
-    <footer className="bg-[#0a2c4d] text-slate-100">
-      <div className="mx-auto max-w-7xl px-4 pb-8 pt-16 sm:px-6 lg:px-8">
-        <div
-          className={`grid grid-cols-1 gap-12 border-b border-white/10 pb-12 sm:grid-cols-2 ${showQuickLinks ? 'lg:grid-cols-[1.55fr_0.8fr_0.95fr_1fr]' : 'lg:grid-cols-[1.55fr_0.95fr_1fr]'} lg:gap-14`}
-        >
-          <div className="space-y-6 sm:col-span-2 lg:col-span-1">
+    /* Rectangle 11065 — bg:#002143, height:604px */
+    <footer className="w-full bg-[#002143] font-outfit text-white">
+      {/* Inner content — max 1920px, inset ~292px each side ≈ pl-[292px] on 1920; responsive px */}
+      <div className="max-w-[1920px] mx-auto px-6 md:px-12 lg:px-[80px] xl:px-[160px] 2xl:px-[292px] pt-[80px] pb-0">
+
+        {/* ── 4-column grid ──
+            Figma widths (on 1920px, content 292→1619 = 1327px):
+            Logo col ~42%, Quick Links ~21%, Resources ~23%, Contact ~14% */}
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-[42fr_21fr_23fr_22fr] lg:gap-0">
+
+          {/* ── Column 1: Logo + Description + Socials ── */}
+          <div className="lg:pr-12">
+            {/* white homes logo 1 — 244.46×68px */}
             {resolvedLogoUrl ? (
-              <img src={resolvedLogoUrl} alt={brandName} className="h-11 w-auto object-contain" />
+              <img
+                src={resolvedLogoUrl}
+                alt={brandName}
+                style={{ width: 244, height: 68, objectFit: 'contain' }}
+              />
             ) : (
-              <span className="text-[2rem] font-semibold tracking-[-0.04em] text-white">{brandName}</span>
+              <span className="text-[2rem] font-semibold text-white">{brandName}</span>
             )}
 
-            <p className="max-w-[320px] text-[15px] leading-[1.65] text-white/88">
+            {/* Description — 18px/400, line-height:30px, width:434px, top:2843 = 208px from footer */}
+            <p
+              className="text-white font-outfit mt-[60px]"
+              style={{ fontSize: 18, fontWeight: 400, lineHeight: '30px', maxWidth: 434 }}
+            >
               Your trusted partner in finding the perfect home.
               Connecting Filipinos with quality properties nationwide.
             </p>
 
-            <div className="flex items-center gap-4 pt-1 text-white">
+            {/* Social icons — top:2953 = ~318px from footer top */}
+            <div className="flex items-center gap-[18px] mt-[65px]">
               {socials.facebook && (
-                <a
-                  href={socials.facebook}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Facebook"
-                  className="inline-flex h-8 w-8 items-center justify-center text-white/94 transition-colors hover:text-white"
-                >
-                  <SolidFacebookIcon className="h-6 w-6" />
+                <a href={socials.facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
+                  {/* ic:baseline-facebook — 32×32 */}
+                  <SolidFacebookIcon style={{ width: 32, height: 32, color: '#fff' }} />
                 </a>
               )}
               {socials.instagram && (
-                <a
-                  href={socials.instagram}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Instagram"
-                  className="inline-flex h-8 w-8 items-center justify-center text-white/94 transition-colors hover:text-white"
-                >
-                  <SolidInstagramIcon className="h-6 w-6" />
+                <a href={socials.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
+                  {/* formkit:instagram — 28×28 */}
+                  <SolidInstagramIcon style={{ width: 28, height: 28, color: '#fff' }} />
                 </a>
               )}
               {socials.twitter && (
-                <a
-                  href={socials.twitter}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Twitter / X"
-                  className="inline-flex h-8 min-w-8 items-center justify-center text-[2rem] font-light leading-none text-white/94 transition-colors hover:text-white"
-                >
-                  <SolidXIcon className="h-6 w-6" />
+                <a href={socials.twitter} target="_blank" rel="noreferrer" aria-label="Twitter / X">
+                  {/* prime:twitter — 25×24 */}
+                  <SolidXIcon style={{ width: 25, height: 24, color: '#fff' }} />
                 </a>
               )}
             </div>
           </div>
 
-          {showQuickLinks ? (
-            <div className="space-y-5">
-              <h4 className="text-[1.05rem] font-semibold tracking-[-0.03em] text-white">Quick Links</h4>
-              <nav className="space-y-3.5">
-                {links.map(({ label, href }) => (
+          {/* ── Column 2: Quick Links — left:848, heading top:2715 (80px from footer) ── */}
+          {showQuickLinks && (
+            <div>
+              {/* "Quick Links" — 22px/700 */}
+              <h4 style={{ fontSize: 22, fontWeight: 700, lineHeight: '22px', color: '#FFFFFF' }}>
+                Quick Links
+              </h4>
+              {/* Items spaced 43px apart (18px text + 25px gap) */}
+              <nav className="flex flex-col" style={{ marginTop: 35, gap: 25 }}>
+                {QUICK_LINKS.map(({ label, href }) => (
                   <Link
-                    key={`${href}-${label}`}
+                    key={label}
                     href={href}
-                    className="block text-[15px] text-white/88 transition-colors hover:text-white"
+                    className="text-white hover:text-white/80 transition-colors"
+                    style={{ fontSize: 18, fontWeight: 400, lineHeight: '18px' }}
                   >
                     {label}
                   </Link>
                 ))}
               </nav>
             </div>
-          ) : null}
+          )}
 
-          <div className="space-y-5">
-            <h4 className="text-[1.05rem] font-semibold tracking-[-0.03em] text-white">Resources</h4>
-            <nav className="space-y-3.5">
+          {/* ── Column 3: Resources — left:1129, heading top:2715 ── */}
+          <div>
+            {/* "Resources" — 22px/700 */}
+            <h4 style={{ fontSize: 22, fontWeight: 700, lineHeight: '22px', color: '#FFFFFF' }}>
+              Resources
+            </h4>
+            <nav className="flex flex-col" style={{ marginTop: 35, gap: 25 }}>
               {RESOURCE_LINKS.map(({ label, href }) => (
                 <Link
-                  key={`${href}-${label}`}
+                  key={label}
                   href={href}
-                  className="block text-[15px] text-white/88 transition-colors hover:text-white"
+                  className="text-white hover:text-white/80 transition-colors"
+                  style={{ fontSize: 18, fontWeight: 400, lineHeight: '18px' }}
                 >
                   {label}
                 </Link>
@@ -163,55 +171,86 @@ export default function SiteFooter({
             </nav>
           </div>
 
-          <div className="space-y-5">
-            <h4 className="text-[1.05rem] font-semibold tracking-[-0.03em] text-white">Contact Us</h4>
-            <div className="space-y-5 text-white/88">
+          {/* ── Column 4: Contact Us — left:1431/1433, heading top:2715 ── */}
+          <div>
+            {/* "Contact Us" — 22px/700 */}
+            <h4 style={{ fontSize: 22, fontWeight: 700, lineHeight: '22px', color: '#FFFFFF' }}>
+              Contact Us
+            </h4>
+
+            <div className="flex flex-col" style={{ marginTop: 35, gap: 22 }}>
+              {/* Phone — ic:baseline-phone 30×30, text 18px/400, sub 12px/300 */}
               {contactPhone && (
-                <a href={`tel:${contactPhone}`} className="flex items-start gap-3.5">
-                  <SolidPhoneIcon className="mt-0.5 h-[24px] w-[24px] shrink-0 text-white" />
+                <a href={`tel:${contactPhone}`} className="flex items-start gap-[10px] hover:opacity-80 transition-opacity">
+                  <SolidPhoneIcon style={{ width: 30, height: 30, color: '#fff', flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div className="break-words text-[15px] font-medium text-white">{contactPhone}</div>
-                    <div className="text-[12px] text-white/68">Mon-Sat 9AM-6PM</div>
+                    <div style={{ fontSize: 18, fontWeight: 400, lineHeight: '18px', color: '#FFFFFF' }}>{contactPhone}</div>
+                    <div style={{ fontSize: 12, fontWeight: 300, lineHeight: '12px', color: '#FFFFFF', marginTop: 8 }}>Mon-Sat 9AM-6PM</div>
                   </div>
                 </a>
               )}
 
+              {/* Email — ic:round-email 30×30 */}
               {contactEmail && (
-                <a href={`mailto:${contactEmail}`} className="flex items-start gap-3.5">
-                  <SolidMailIcon className="mt-0.5 h-[24px] w-[24px] shrink-0 text-white" />
+                <a href={`mailto:${contactEmail}`} className="flex items-start gap-[10px] hover:opacity-80 transition-opacity">
+                  <SolidMailIcon style={{ width: 30, height: 30, color: '#fff', flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <div className="break-words text-[15px] font-medium text-white">{contactEmail}</div>
-                    <div className="text-[12px] text-white/68">We reply within 24hrs</div>
+                    <div style={{ fontSize: 18, fontWeight: 400, lineHeight: '18px', color: '#FFFFFF' }}>{contactEmail}</div>
+                    <div style={{ fontSize: 12, fontWeight: 300, lineHeight: '12px', color: '#FFFFFF', marginTop: 8 }}>We reply within 24hrs</div>
                   </div>
                 </a>
               )}
 
-              <div className="flex items-start gap-3.5">
-                <SolidMapPinIcon className="mt-0.5 h-[24px] w-[24px] shrink-0 text-white" />
+              {/* Location — ix:location-filled 30×30 */}
+              <div className="flex items-start gap-[10px]">
+                <SolidMapPinIcon style={{ width: 30, height: 30, color: '#fff', flexShrink: 0, marginTop: 1 }} />
                 <div>
-                  <div className="text-[15px] font-medium text-white">Manila, Philippines</div>
-                  <div className="text-[12px] text-white/68">Serving nationwide</div>
+                  <div style={{ fontSize: 18, fontWeight: 400, lineHeight: '18px', color: '#FFFFFF' }}>Manila, Philippines</div>
+                  <div style={{ fontSize: 12, fontWeight: 300, lineHeight: '12px', color: '#FFFFFF', marginTop: 8 }}>Serving nationwide</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 pt-8 text-[13px] text-white/72 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <p>(c) {year} {brandName}. All rights reserved. Your dream home awaits.</p>
-            <p>Powered by passion and innovation</p>
+        {/* ── Divider — Rectangle 11074: bg:#25406E, 1440px centered, top:3118 = 483px from footer ── */}
+        <div
+          className="max-w-[1440px] mx-auto"
+          style={{ marginTop: 120, height: 1, background: '#25406E' }}
+        />
+
+        {/* ── Bottom bar — top:3157 = 522px from footer, pb to fill 604px ── */}
+        <div
+          className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
+          style={{ paddingTop: 39, paddingBottom: 39 }}
+        >
+          {/* Copyright — left:300, 15px/300, #DDDDDD */}
+          <div className="flex flex-col gap-[15px]">
+            <p style={{ fontSize: 15, fontWeight: 300, lineHeight: '15px', color: '#DDDDDD' }}>
+              © {year} Homes.ph. All rights reserved. Your dream home awaits.
+            </p>
+            <p style={{ fontSize: 15, fontWeight: 300, lineHeight: '15px', color: '#DDDDDD' }}>
+              Powered by passion and innovation
+            </p>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-x-8 gap-y-2 text-[14px] text-white/78">
+          {/* Legal links — Privacy Policy left:1302, Terms left:1424, Sitemap left:1564; 15px/300, #DDDDDD */}
+          <nav className="flex flex-wrap items-center gap-x-[30px] gap-y-2">
             {LEGAL_LINKS.map(({ label, href }) => (
-              <Link key={label} href={href} className="transition-colors hover:text-white">
+              <Link
+                key={label}
+                href={href}
+                className="hover:text-white transition-colors"
+                style={{ fontSize: 15, fontWeight: 300, lineHeight: '15px', color: '#DDDDDD' }}
+              >
                 {label}
               </Link>
             ))}
           </nav>
         </div>
+
       </div>
     </footer>
   )
 }
+

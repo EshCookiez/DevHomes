@@ -39,6 +39,8 @@ interface ProjectListingsSectionProps {
   initialView?: 'list' | 'map'
 }
 
+import UnifiedListingCard from '@/components/listings/UnifiedListingCard'
+
 export default function ProjectListingsSection({ project, projectListings, saleListings, rentListings, initialView = 'list' }: ProjectListingsSectionProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -86,19 +88,19 @@ export default function ProjectListingsSection({ project, projectListings, saleL
     : [14.6760, 121.0437]
 
   const ListMapToggle = ({ activeView }: { activeView: 'list' | 'map' }) => (
-    <div className="flex items-center border border-[#D3D3D3] rounded-lg bg-white shadow-sm h-[48px] p-1">
+    <div className="flex items-center border border-[#D3D3D3] rounded-[10px] bg-white h-[45px] p-[3px] w-[226px]">
       <button
         onClick={() => setView('list')}
-        className={`flex items-center justify-center gap-2 w-[105px] h-full text-[18px] transition-colors rounded-[8px] font-outfit ${activeView === 'list' ? 'bg-[#DFE3FF] text-[#1428ae] font-medium' : 'text-gray-400 font-light hover:text-[#002143] hover:bg-gray-50'}`}
+        className={`flex items-center justify-center gap-2 w-[105px] h-[39px] text-[18px] transition-colors rounded-[8px] font-outfit ${activeView === 'list' ? 'bg-[#DFE3FF] text-[#1428ae] font-medium' : 'text-[#8187B0] font-light hover:text-[#002143] hover:bg-gray-50'}`}
       >
-        <LayoutList size={18} />
+        <LayoutList size={20} />
         List
       </button>
       <button
         onClick={() => setView('map')}
-        className={`flex items-center justify-center gap-2 w-[105px] h-full text-[18px] transition-colors rounded-[8px] font-outfit ${activeView === 'map' ? 'bg-[#DFE3FF] text-[#1428ae] font-medium' : 'text-gray-400 font-light hover:text-[#002143] hover:bg-gray-50'}`}
+        className={`flex items-center justify-center gap-2 w-[105px] h-[39px] text-[18px] transition-colors rounded-[8px] font-outfit ${activeView === 'map' ? 'bg-[#DFE3FF] text-[#1428ae] font-medium' : 'text-[#8187B0] font-light hover:text-[#002143] hover:bg-gray-50'}`}
       >
-        <MapIcon size={18} />
+        <MapIcon size={20} />
         Map
       </button>
     </div>
@@ -217,11 +219,19 @@ export default function ProjectListingsSection({ project, projectListings, saleL
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 w-full lg:max-w-none lg:w-[941px]">
         <h2 className="text-[35px] font-normal font-outfit text-[#002143]">
-          Properties for {rentListings.length > 0 ? 'rent' : 'sale'} {project.name}
+          Properties for {rentListings.length > 0 ? 'rent' : 'sale'} {project.name.length > 15 ? project.name.substring(0, 15) + '...' : project.name}
         </h2>
 
-        <div className="flex items-center gap-4">
-          <SortDropdown />
+        <div className="flex items-center gap-[15px] shrink-0">
+          <div className="relative">
+            <button className="flex items-center justify-between px-[12px] gap-[6px] border border-[#D3D3D3] rounded-[10px] bg-white text-[18px] font-outfit font-light text-[#002143] hover:bg-gray-50 transition-colors cursor-pointer shrink-0" style={{ width: '149px', height: '45px' }}>
+              <div className="flex items-center gap-[6px]">
+                <LayoutList size={22} className="text-[#002143]" />
+                <span className="truncate">Popular</span>
+              </div>
+              <ChevronDown size={22} className="text-[#002143] transition-transform" />
+            </button>
+          </div>
           <ListMapToggle activeView="list" />
         </div>
       </div>
@@ -235,7 +245,7 @@ export default function ProjectListingsSection({ project, projectListings, saleL
           >
             <span className="text-[18px] font-normal font-outfit text-[#1428AE]">{project.name} {u.unit_name || u.unit_type}</span>
             <span className="text-[18px] font-normal font-outfit text-[#002143]">
-              ({projectListings.filter((l: any) => l.project_unit_id === u.id).length || Math.floor(Math.random() * 10) + 1})
+              ({projectListings.filter((l: any) => l.project_unit_id === u.id).length || 4})
             </span>
           </button>
         ))}
@@ -244,72 +254,22 @@ export default function ProjectListingsSection({ project, projectListings, saleL
       {/* Listing Cards */}
       <div className="space-y-8">
         {sortedListings.map((l: any) => (
-          <div key={l.id} className="bg-white rounded-[10px] w-[941px] h-[316px] border border-[#D3D3D3] overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col lg:flex-row group p-[11px] gap-[11px]">
-            {/* Card Image */}
-            <div className="w-full lg:w-[451px] h-[280px] lg:h-[294px] relative bg-gray-100 shrink-0 rounded-[10px] overflow-hidden">
-              <img
-                src={l.property_listing_galleries?.[0]?.image_url || `https://picsum.photos/seed/list${l.id}/600/400`}
-                alt={l.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute top-3 left-3">
-                <div className="h-[32px] bg-gradient-to-r from-[#2D43D8] to-[#081148] text-white px-4 rounded-r-[10px] flex items-center text-[15px] font-light font-outfit">
-                  TopFranchise
-                </div>
-              </div>
-              <button className="absolute top-3 right-3 bg-white/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-white transition-colors group/heart">
-                <Heart size={20} className="text-white group-hover/heart:text-[#1428ae]" />
-              </button>
-            </div>
-
-            {/* Card Content */}
-            <div className="flex-1 flex flex-col justify-between py-1 lg:py-2 pr-4">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-[30px] font-medium text-[#002143] font-outfit mt-1">Php</span>
-                  <h3 className="text-[40px] font-medium text-[#002143] font-outfit leading-none">{Number(l.price).toLocaleString()}</h3>
-                </div>
-                <div className="flex flex-wrap items-center gap-4 text-[15px] font-light text-[#002143] font-outfit">
-                  <span>Apartment</span>
-                  <div className="w-px h-5 bg-[#D3D3D3] hidden md:block" />
-                  <div className="flex items-center gap-2">
-                    <Layout size={18} className="text-[#002143]" />
-                    <span>{l.project_units?.bedrooms || 1}</span>
-                  </div>
-                  <div className="w-px h-5 bg-[#D3D3D3] hidden md:block" />
-                  <div className="flex items-center gap-2">
-                    <LayoutList size={18} className="text-[#002143]" />
-                    <span>{l.project_units?.bathrooms || 2}</span>
-                  </div>
-                  <div className="w-px h-5 bg-[#D3D3D3] hidden md:block" />
-                  <span>Area: {l.project_units?.floor_area_sqm || 500} sqm</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  {['Spacious 1BR Apartment', 'High Finishing', 'Prime Location'].map((tag, i) => (
-                    <React.Fragment key={i}>
-                      <span className="text-[15px] font-light text-[#1428AE] font-outfit whitespace-nowrap">{tag}</span>
-                      {i < 2 && <div className="w-px h-4 bg-[#D3D3D3] hidden md:block" />}
-                    </React.Fragment>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 text-[#002143] text-[15px] font-light font-outfit">
-                  <MapPin size={18} className="text-[#002143]" />
-                  <span>{project.name}, {project.city_municipality}, Philippines</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 mt-6 lg:mt-0">
-                <button className="flex-1 h-[50px] bg-[#DFE3FF] text-[#1428AE] rounded-[10px] font-normal text-[18px] flex items-center justify-center gap-2 hover:bg-[#D0D7FF] transition-all font-outfit shadow-sm">
-                  <Mail size={20} /> Email
-                </button>
-                <button className="flex-1 h-[50px] bg-[#DFE3FF] text-[#1428AE] rounded-[10px] font-normal text-[18px] flex items-center justify-center gap-2 hover:bg-[#D0D7FF] transition-all font-outfit shadow-sm">
-                  <Phone size={20} /> Call
-                </button>
-                <button className="flex-[1.5] h-[50px] bg-[#E1FFDF] text-[#00A629] rounded-[10px] font-normal text-[18px] flex items-center justify-center gap-2 hover:bg-[#D4F7DB] transition-all font-outfit shadow-sm">
-                  <MessageSquareMore size={20} /> WhatsApp
-                </button>
-              </div>
-            </div>
-          </div>
+          <UnifiedListingCard
+            key={l.id}
+            variant="buy-rent"
+            href={`/listings/${l.id}`}
+            imageUrl={l.property_listing_galleries?.[0]?.image_url || '/properties/placeholder.jpg'}
+            price={Number(l.selling_price || l.price || 0)}
+            propertyType={l.project_units?.unit_type || l.property_type || 'Residential'}
+            bedrooms={l.project_units?.bedrooms || l.bedrooms || 0}
+            bathrooms={l.project_units?.bathrooms || l.bathrooms || 0}
+            areaSqm={l.project_units?.floor_area_sqm || l.floor_area_sqm || 0}
+            listingTitle={l.title}
+            tags={[l.project_units?.unit_name, l.listing_type === 'rent' ? 'For Rent' : 'For Sale'].filter(Boolean)}
+            location={`${project.name}, ${project.city_municipality || ''}, Philippines`}
+            developerName={project.developers_profiles?.developer_name}
+            developerLogoUrl={project.developers_profiles?.logo_url}
+          />
         ))}
       </div>
     </>

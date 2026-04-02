@@ -1125,4 +1125,4 @@ export const SITE_STATS = {
 
 export type MockListing = typeof MOCK_LISTINGS[number]
 export type MockProject = typeof MOCK_PROJECTS[number]
-export type MockDeveloper = typeof MOCK_DEVELOPERS[number]
+export type MockDeveloper = typeof MOCK_DEVELOPERS[number]

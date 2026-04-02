@@ -4,12 +4,13 @@ import SiteHeader from '@/components/layout/SiteHeader'
 import SiteFooter from '@/components/layout/SiteFooter'
 import { getSiteSettings } from '@/lib/site-settings'
 import InquiryForm from '@/components/listings/InquiryForm'
-import { MOCK_PROJECTS, MOCK_LISTINGS } from '@/lib/mock-data'
+import { MOCK_PROJECTS } from '@/lib/mock-data'
+import ListingSidebar from '@/components/listings/ListingSidebar'
 import SearchFilter from '@/components/projects/SearchFilter'
 import ProjectListingsSection from '@/components/projects/ProjectListingsSection'
 import { MapPin, Star, Check, ChevronRight, Coins, Layout, Info, Heart, Share2, ChevronDown, LayoutList, Map as MapIcon, Phone, Mail, Bell, MessageSquareMore, ListFilter } from 'lucide-react'
 import React from 'react'
-import { getProjectBySlug } from '@/lib/db-queries'
+import { getProjectBySlug, getListingsByProjectId } from '@/lib/db-queries'
 import AdBanner from '@/components/ui/AdBanner'
 
 const fmt = (n?: number | null) => n ? `₱ ${Number(n).toLocaleString()}` : null
@@ -40,27 +41,7 @@ export default async function ProjectDetailPage({
 
   if (!project) notFound()
 
-  let projectListings = MOCK_LISTINGS.filter(l => l.project_id === project.id)
-
-  // If no mock listings map to this real project ID, but the project has units, generate virtual listings from the units
-  // so the developer can see their inventory visually immediately.
-  if (projectListings.length === 0 && project.project_units?.length > 0) {
-    projectListings = project.project_units.map((u: any) => ({
-      id: u.id + 9000,
-      project_id: project.id,
-      title: `${project.name} - ${u.unit_name || u.unit_type}`,
-      listing_type: 'sale',
-      price: u.selling_price || project.price_range_min || 0,
-      currency: project.currency || 'PHP',
-      property_listing_galleries: [{ image_url: `https://picsum.photos/seed/unit${u.id}/600/400` }],
-      project_units: {
-        id: u.id,
-        bedrooms: u.bedrooms,
-        bathrooms: u.bathrooms,
-        floor_area_sqm: u.floor_area_sqm
-      }
-    }))
-  }
+  const projectListings = await getListingsByProjectId(project.id)
 
   const saleListings = projectListings.filter(l => l.listing_type === 'sale')
   const rentListings = projectListings.filter(l => l.listing_type === 'rent')
@@ -77,26 +58,29 @@ export default async function ProjectDetailPage({
       />
 
       {/* ── Search Bar Section ── */}
-      <div className="bg-white border-b border-gray-100 py-6 w-full">
+      <div className="bg-white border-b border-[#D3D3D3] py-6 w-full">
         <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 xl:px-24 2xl:pl-[296px] 2xl:pr-[297px]">
           <SearchFilter />
         </div>
       </div>
 
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden bg-white">
         <div
-          className="absolute inset-x-0 top-0 h-[800px] pointer-events-none"
-          style={{ background: 'linear-gradient(180deg, rgba(239, 241, 255, 0.8) 0%, #FFFFFF 100%)', zIndex: -1 }}
+          className="absolute inset-x-0 top-0 h-[727px] pointer-events-none max-w-[1920px] mx-auto"
+          style={{ background: 'linear-gradient(180deg, rgba(239, 241, 255, 0.8) 0%, #FFFFFF 100%)' }}
         />
-        <main className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 xl:px-24 2xl:pl-[296px] 2xl:pr-[297px] py-10 space-y-8 relative font-outfit">
+        <main className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 xl:px-24 2xl:pl-[296px] 2xl:pr-[297px] py-10 space-y-8 relative z-10 font-outfit">
           {!isMapView && (
             <>
               {/* ── Breadcrumbs ── */}
               <nav className="flex items-center gap-3 text-[16px] text-[#002143] font-light mb-8">
                 <span className="shrink-0">For Sale:</span>
-                <Link href="/projects" className="text-[#001392] hover:underline">Philippine Properties</Link>
+                <Link href="/projects" className="text-[#001392] hover:underline">Philippine Projects</Link>
                 <ChevronRight size={14} className="text-[#002143]" />
-                <Link href={`/developers/${project.developers_profiles?.id}`} className="text-[#001392] hover:underline">
+                <Link
+                  href={`/developers/${project.developers_profiles?.developer_name ? project.developers_profiles.developer_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : project.developers_profiles?.id}`}
+                  className="text-[#001392] hover:underline"
+                >
                   {project.developers_profiles?.developer_name}
                 </Link>
                 <ChevronRight size={14} className="text-[#002143]" />
@@ -264,111 +248,15 @@ export default async function ProjectDetailPage({
                   </div>
 
                   {/* ── Right Column: Sidebar ── */}
-                  <aside className="lg:col-span-4 space-y-8">
-                    {/* Contact Us Card */}
-                    <div className="bg-white rounded-[10px] border border-[#D3D3D3] p-6 text-center space-y-4 lg:w-[349px] lg:h-[208px] flex flex-col justify-center shadow-sm lg:ml-auto">
-                      <div className="space-y-1">
-                        <h4 className="text-[22px] font-bold text-[#002143] font-outfit">Contact Us</h4>
-                        <p className="text-[18px] text-[#002143] text-light font-outfit">
-                          Submit your interest or inquiry for {project.name}.
-                        </p>
-                      </div>
-                      <button className="w-full bg-[#E5FFEB] text-[#008A2E] py-3.5 rounded-[12px] font-regular text-[18px] flex items-center justify-center gap-3 hover:bg-[#D4F7DB] transition-all group font-outfit">
-                        <MessageSquareMore size={22} className="group-hover:scale-110 transition-transform" />
-                        WhatsApp
-                      </button>
-                    </div>
-
-                    {/* Property Alert Card */}
-                    <button className="w-[349px] h-[56px] border-2 border-[#1428AE] text-[#1428AE] py-5 rounded-[10px] font-regular text-[16px] uppercase tracking-wider flex items-center justify-center gap-4 transition-all group lg:ml-auto">
-                      <Bell size={24} className="group-hover:animate-bounce" />
-                      Alert me of new properties
-                    </button>
-
-                    {/* Community Card */}
-                    <div className="bg-white rounded-[10px] border border-[#D3D3D3] p-4 flex items-center gap-4 group cursor-pointer hover:shadow-sm transition-all lg:w-[349px] lg:h-[129px] overflow-hidden lg:ml-auto">
-                      <div className="w-[99px] h-[99px] rounded-[10px] overflow-hidden bg-[#D9D9D9] shrink-0">
-                        <img
-                          src={`https://picsum.photos/seed/${project.city_municipality}/200/200`}
-                          alt={project.city_municipality}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      </div>
-                      <div className="flex flex-col justify-center">
-                        <h4 className="text-[20px] font-semibold text-[#002143] font-outfit leading-tight">{project.city_municipality}</h4>
-                        <p className="text-[18px] font-light text-[#002143] font-outfit leading-[22px] mt-1">
-                          See the community attractions and lifestyle
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Recommended Links */}
-                    <div className="lg:w-[349px] space-y-6 lg:ml-auto">
-                      {/* Section 1: Recommended searches */}
-                      <div className="space-y-4">
-                        <div className="bg-[#F4F4F9] h-[35px] rounded-[5px] flex items-center px-4">
-                          <h4 className="text-[18px] font-normal text-[#002143] font-outfit">Recommended searches</h4>
-                        </div>
-                        <div className="px-4 space-y-[15px]">
-                          {[
-                            `1 Bedroom Properties for rent in ${project.city_municipality}`,
-                            `2 Bedroom Properties for rent in ${project.city_municipality}`,
-                            `Apartments for rent in ${project.city_municipality}`
-                          ].map((link, idx) => (
-                            <Link key={idx} href="#" className="block text-[15px] font-light text-[#002143] hover:text-[#1428AE] transition-all font-outfit leading-none">
-                              {link}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Section 2: Near Project */}
-                      <div className="space-y-4">
-                        <div className="bg-[#F4F4F9] h-[35px] rounded-[5px] flex items-center px-4">
-                          <h4 className="text-[18px] font-normal text-[#002143] font-outfit">Near {project.name}</h4>
-                        </div>
-                        <div className="px-4 space-y-[15px]">
-                          {[
-                            'De Rosa Residences Properties',
-                            'Ters Gardenia Properties',
-                            'Pete Heights Properties',
-                            'NC Residences Properties'
-                          ].map((link, idx) => (
-                            <Link key={idx} href="#" className="block text-[15px] font-light text-[#002143] hover:text-[#1428AE] transition-all font-outfit leading-none">
-                              {link}
-                            </Link>
-                          ))}
-                          <button className="block text-[15px] font-medium text-[#1428AE] hover:underline transition-all font-outfit leading-none mt-2">
-                            View More
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Section 3: Other nearby area properties */}
-                      <div className="space-y-4">
-                        <div className="bg-[#F4F4F9] h-[35px] rounded-[5px] flex items-center px-4">
-                          <h4 className="text-[18px] font-normal text-[#002143] font-outfit">Other nearby area properties</h4>
-                        </div>
-                        <div className="px-4 space-y-[15px]">
-                          {[
-                            'Blue Valley Properties',
-                            'Quezon North Properties',
-                            'Nest House Properties',
-                            'Miltier 101 Propertiesw'
-                          ].map((link, idx) => (
-                            <Link key={idx} href="#" className="block text-[15px] font-light text-[#002143] hover:text-[#1428AE] transition-all font-outfit leading-none">
-                              {link}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Ads Banner */}
-                    <div className="flex flex-col items-center">
-                      <AdBanner sizes={['300x600']} />
-                    </div>
-                  </aside>
+                  <div className="lg:col-span-4 lg:ml-auto">
+                    <ListingSidebar 
+                      variant="project" 
+                      projectData={{ 
+                        name: project.name, 
+                        city_municipality: project.city_municipality || 'Cebu City' 
+                      }} 
+                    />
+                  </div>
                 </div>
               </section>
             )

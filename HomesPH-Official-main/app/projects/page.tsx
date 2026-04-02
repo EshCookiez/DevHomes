@@ -206,7 +206,7 @@ export default async function ProjectsPage(
                 <PropertyHeader
                   breadcrumbPrefix="For Sale:"
                   breadcrumbLinkHref="/projects"
-                  title="Properties for sale in Philippines"
+                  title="Projects for sale in Philippines"
                   topLocations={topLocations.map(([loc, count]) => ({
                     name: loc,
                     count,
