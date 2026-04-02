@@ -60,6 +60,16 @@ export async function getDevelopersByProvince(provinceSlug: string, limit = 8) {
   return res.json()
 }
 
+export async function getListingsByProjectId(projectId: number) {
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!SUPABASE_URL) return []
+  const headers = getSupabaseFetchHeaders()
+  const url = `${SUPABASE_URL}/rest/v1/property_listings?select=*,property_listing_galleries(*),project_units(*)&project_id=eq.${encodeURIComponent(projectId)}&status=eq.published&order=id.desc`
+  const res = await fetch(url, { headers, next: { revalidate: REVALIDATE } })
+  if (!res.ok) return []
+  return res.json()
+}
+
 export async function getProjectBySlug(slug: string) {
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
   if (!SUPABASE_URL) return null

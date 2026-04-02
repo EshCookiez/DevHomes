@@ -31,7 +31,7 @@ export default function PropertyHeader({
     <div className="w-[945.99px] relative text-left">
       <nav className="flex items-center gap-[8.05px] text-[16px] text-[#002143] font-outfit font-light mb-[35.2px] h-[16.08px] leading-[16px]">
         <span className="w-[63.33px] truncate">{breadcrumbPrefix}</span>
-        <Link href={breadcrumbLinkHref} className="w-[146.77px] text-[#002143] hover:underline hover:text-[#002143] transition-colors truncate">Philippine Properties</Link>
+        <Link href={breadcrumbLinkHref} className="w-[146.77px] text-[#002143] hover:underline hover:text-[#002143] transition-colors truncate">Philippine Projects</Link>
       </nav>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-[35.18px] relative h-[45.24px]">

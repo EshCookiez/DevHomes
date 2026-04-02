@@ -1600,6 +1600,17 @@ export function buildPropertySearchUrl(
   return `${pathname}?${params.toString()}`
 }
 
+export interface ListingDetailExtended extends PublicListingSearchRecord {
+  agent: {
+    full_name: string | null
+    profile_image_url: string | null
+    email: string | null
+    phone: string | null
+    role: string | null
+  } | null
+  recommended: PublicListingSearchRecord[]
+}
+
 export async function getListingById(id: number): Promise<PublicListingSearchRecord | null> {
   const admin = createAdminSupabaseClient()
 
@@ -1623,22 +1634,35 @@ export async function getListingById(id: number): Promise<PublicListingSearchRec
       : Promise.resolve({ data: null }),
     admin.from('property_listing_galleries').select('id,listing_id,image_url,display_order').eq('listing_id', id).order('display_order', { ascending: true }),
     row.user_profile_id
-      ? admin.from('user_profiles').select('id,profile_image_url').eq('id', row.user_profile_id).maybeSingle()
+      ? admin.from('user_profiles').select('id,profile_image_url,full_name,role').eq('id', row.user_profile_id).maybeSingle()
       : Promise.resolve({ data: null }),
     row.project_id
       ? admin.from('project_amenities').select('project_id,amenity_id').eq('project_id', row.project_id)
       : Promise.resolve({ data: [] })
   ])
 
-  let amenities: string[] = []
+  let amenities: { name: string; icon: string | null }[] = []
   if (projectAmenitiesResult.data && projectAmenitiesResult.data.length > 0) {
     const amenityIds = projectAmenitiesResult.data.map(a => a.amenity_id)
-    const { data: amenityNames } = await admin.from('amenities').select('name').in('id', amenityIds)
-    amenities = (amenityNames || []).map(a => a.name)
+    const { data: amenityRows } = await admin.from('amenities').select('name,icon').in('id', amenityIds)
+    amenities = (amenityRows || []).map(a => ({ name: a.name, icon: a.icon ?? null }))
   }
 
   const project = projectResult.data
   const developer = developerResult.data || (project?.developer_id ? (await admin.from('developers_profiles').select('developer_name, logo_url').eq('id', project.developer_id).maybeSingle()).data : null)
+
+  // Fetch agent contact info
+  let agentContact: { email: string | null; phone: string | null } = { email: null, phone: null }
+  if (row.user_profile_id) {
+    const { data: contactRow } = await admin
+      .from('contact_information')
+      .select('email,primary_mobile')
+      .eq('user_profile_id', row.user_profile_id)
+      .maybeSingle()
+    if (contactRow) {
+      agentContact = { email: contactRow.email, phone: contactRow.primary_mobile }
+    }
+  }
 
   return {
     id: row.id,
@@ -1681,6 +1705,101 @@ export async function getListingById(id: number): Promise<PublicListingSearchRec
       selling_price: unitResult.data.selling_price
     } : null,
     property_listing_galleries: galleryResult.data || [],
-    project_amenities: amenities
+    project_amenities: amenities,
+    agent: userProfileResult.data ? {
+      full_name: userProfileResult.data.full_name ?? null,
+      profile_image_url: userProfileResult.data.profile_image_url ?? null,
+      email: agentContact.email,
+      phone: agentContact.phone,
+      role: userProfileResult.data.role ?? null,
+    } : null,
+  } as any
+}
+
+export async function getRecommendedListings(currentId: number, projectId: number | null, limit = 3): Promise<PublicListingSearchRecord[]> {
+  const admin = createAdminSupabaseClient()
+
+  let query = admin
+    .from('property_listings')
+    .select('id,title,description,listing_type,status,currency,price,negotiable,is_featured,created_at,developer_id,project_id,project_unit_id,user_profile_id')
+    .eq('status', 'published')
+    .neq('id', currentId)
+    .limit(limit)
+
+  if (projectId) {
+    query = query.eq('project_id', projectId)
   }
+
+  const { data: rows } = await query.order('created_at', { ascending: false })
+  if (!rows || rows.length === 0) return []
+
+  const results: PublicListingSearchRecord[] = []
+  for (const row of rows) {
+    const [unitRes, galleryRes] = await Promise.all([
+      row.project_unit_id
+        ? admin.from('project_units').select('id,project_id,unit_name,unit_type,bedrooms,bathrooms,floor_area_sqm,lot_area_sqm,has_parking,has_balcony,is_furnished,is_rfo,selling_price').eq('id', row.project_unit_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      admin.from('property_listing_galleries').select('id,listing_id,image_url,display_order').eq('listing_id', row.id).order('display_order', { ascending: true }).limit(1),
+    ])
+
+    let projData = null
+    if (row.project_id) {
+      const { data } = await admin.from('projects').select('id,developer_id,name,slug,city_municipality,province,barangay,region,project_type,classification,main_image_url').eq('id', row.project_id).maybeSingle()
+      projData = data
+    }
+
+    let devData = null
+    if (row.developer_id) {
+      const { data } = await admin.from('developers_profiles').select('developer_name,logo_url').eq('id', row.developer_id).maybeSingle()
+      devData = data
+    } else if (projData?.developer_id) {
+      const { data } = await admin.from('developers_profiles').select('developer_name,logo_url').eq('id', projData.developer_id).maybeSingle()
+      devData = data
+    }
+
+    results.push({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      listing_type: row.listing_type,
+      status: row.status,
+      currency: row.currency,
+      price: row.price,
+      negotiable: row.negotiable,
+      is_featured: row.is_featured,
+      created_at: row.created_at,
+      developers_profiles: devData ? { developer_name: devData.developer_name, logo_url: devData.logo_url } : null,
+      user_profiles: null,
+      projects: projData ? {
+        id: projData.id,
+        name: projData.name,
+        slug: projData.slug,
+        city_municipality: projData.city_municipality,
+        province: projData.province,
+        barangay: projData.barangay,
+        region: projData.region,
+        project_type: projData.project_type,
+        classification: projData.classification,
+        main_image_url: projData.main_image_url,
+      } : null,
+      project_units: unitRes.data ? {
+        id: unitRes.data.id,
+        project_id: unitRes.data.project_id,
+        unit_name: unitRes.data.unit_name,
+        unit_type: unitRes.data.unit_type,
+        bedrooms: unitRes.data.bedrooms,
+        bathrooms: unitRes.data.bathrooms,
+        floor_area_sqm: unitRes.data.floor_area_sqm,
+        lot_area_sqm: unitRes.data.lot_area_sqm,
+        has_parking: unitRes.data.has_parking,
+        has_balcony: unitRes.data.has_balcony,
+        is_furnished: unitRes.data.is_furnished,
+        is_rfo: unitRes.data.is_rfo,
+        selling_price: unitRes.data.selling_price,
+      } : null,
+      property_listing_galleries: galleryRes.data || [],
+      project_amenities: [],
+    })
+  }
+  return results
 }
