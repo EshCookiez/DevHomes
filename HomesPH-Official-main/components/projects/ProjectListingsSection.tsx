@@ -1,37 +1,27 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import dynamic from 'next/dynamic'
-import { useMap } from 'react-leaflet'
 import SortDropdown from '@/components/projects/SortDropdown'
 import { LayoutList, Map as MapIcon, ListFilter, ChevronDown, Heart, Layout, MapPin, Phone, Mail, MessageSquareMore, BedDouble, Bath, Square, ChevronLeft, ChevronRight } from 'lucide-react'
-
-const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false })
-const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
-const Marker = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false })
-const Popup = dynamic(() => import('react-leaflet').then(m => m.Popup), { ssr: false })
-
-function MapResizer() {
-  const map = useMap()
-  useEffect(() => {
-    setTimeout(() => {
-      map.invalidateSize()
-    }, 100)
-  }, [map])
-  return null
-}
+import ListingMapView from '@/components/listings/ListingMapView'
+import type { PublicListingSearchRecord } from '@/lib/property-search'
 
 interface ProjectListingsSectionProps {
   project: {
     id: number
     name: string
+    slug?: string
     city_municipality: string | null
+    province?: string | null
+    project_type?: string | null
+    classification?: string | null
+    main_image_url?: string | null
     latitude: number | null
     longitude: number | null
     project_units?: any[]
-    slug?: string
+    developers_profiles?: { developer_name?: string | null; logo_url?: string | null } | null
   }
   projectListings: any[]
   saleListings: any[]
@@ -47,6 +37,69 @@ export default function ProjectListingsSection({ project, projectListings, saleL
   const searchParams = useSearchParams()
   const view = searchParams.get('view') === 'map' ? 'map' : 'list'
   const sort = searchParams.get('sort') || ''
+
+  // Build normalised searchParams for ListingMapView
+  const normalizedSearchParams = useMemo(() => {
+    const result: Record<string, string | undefined> = {}
+    searchParams.forEach((value, key) => { result[key] = value })
+    return result
+  }, [searchParams])
+
+  // Adapt project listings to PublicListingSearchRecord shape for ListingMapView
+  const adaptedListings = useMemo((): PublicListingSearchRecord[] => {
+    return projectListings.map((l: any) => ({
+      id: l.id,
+      title: l.title,
+      description: l.description ?? null,
+      listing_type: l.listing_type ?? null,
+      status: l.status ?? null,
+      currency: l.currency ?? null,
+      price: l.price ?? null,
+      negotiable: l.negotiable ?? null,
+      is_featured: l.is_featured ?? null,
+      created_at: l.created_at ?? null,
+      developers_profiles: project.developers_profiles
+        ? {
+            developer_name: project.developers_profiles.developer_name ?? null,
+            logo_url: project.developers_profiles.logo_url ?? null,
+          }
+        : null,
+      user_profiles: null,
+      projects: {
+        id: project.id,
+        name: project.name,
+        slug: project.slug ?? project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        city_municipality: project.city_municipality,
+        province: project.province ?? null,
+        barangay: null,
+        region: null,
+        project_type: project.project_type ?? null,
+        classification: project.classification ?? null,
+        main_image_url: project.main_image_url ?? null,
+        latitude: project.latitude,
+        longitude: project.longitude,
+      },
+      project_units: l.project_units
+        ? {
+            id: l.project_units.id,
+            project_id: l.project_units.project_id,
+            unit_name: l.project_units.unit_name ?? null,
+            unit_type: l.project_units.unit_type ?? '',
+            bedrooms: l.project_units.bedrooms ?? null,
+            bathrooms: l.project_units.bathrooms ?? null,
+            floor_area_sqm: l.project_units.floor_area_sqm ?? null,
+            lot_area_sqm: l.project_units.lot_area_sqm ?? null,
+            has_parking: l.project_units.has_parking ?? null,
+            has_balcony: l.project_units.has_balcony ?? null,
+            is_furnished: l.project_units.is_furnished ?? null,
+            is_rfo: l.project_units.is_rfo ?? null,
+            selling_price: l.project_units.selling_price ?? null,
+          }
+        : null,
+      property_listing_galleries: l.property_listing_galleries ?? [],
+      project_amenities: [],
+    }))
+  }, [projectListings, project])
 
   const sortedListings = React.useMemo(() => {
     const list = [...projectListings]
@@ -72,21 +125,6 @@ export default function ProjectListingsSection({ project, projectListings, saleL
     router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  // Fix Leaflet default marker icons in Next.js/webpack
-  useEffect(() => {
-    const L = require('leaflet')
-    delete (L.Icon.Default.prototype as any)._getIconUrl
-    L.Icon.Default.mergeOptions({
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    })
-  }, [])
-
-  const mapCenter: [number, number] = project.latitude && project.longitude
-    ? [Number(project.latitude), Number(project.longitude)]
-    : [14.6760, 121.0437]
-
   const ListMapToggle = ({ activeView }: { activeView: 'list' | 'map' }) => (
     <div className="flex items-center border border-[#D3D3D3] rounded-[10px] bg-white h-[45px] p-[3px] w-[226px]">
       <button
@@ -107,110 +145,13 @@ export default function ProjectListingsSection({ project, projectListings, saleL
   )
 
   if (view === 'map') {
+    const mode = rentListings.length > 0 && saleListings.length === 0 ? 'rent' : 'sale'
     return (
-      <div className="flex h-[calc(100vh-116px)] -mx-4 md:-mx-8 lg:-mx-12 xl:-mx-24 2xl:-mx-[296px] -mt-8">
-        {/* Left Side: Scrollable Listing Cards */}
-        <div className="w-[45%] h-full overflow-y-auto px-8 py-6 bg-white border-r border-gray-200 scrollbar-hide">
-          {/* Action links */}
-          <div className="flex items-center justify-between mb-6">
-            <button
-              onClick={() => setView('list')}
-              className="flex items-center gap-1.5 text-[#001392] font-outfit font-medium text-[16px] hover:underline transition-all"
-            >
-              <ChevronLeft size={18} />
-              Return to regular search
-            </button>
-            <Link 
-              href="/projects"
-              className="text-[#001392] font-outfit font-medium text-[16px] hover:underline"
-            >
-              Clear Filters
-            </Link>
-          </div>
-
-          <h2 className="text-[35px] font-outfit font-normal text-[#002143] mb-8 leading-tight">
-            Properties for {rentListings.length > 0 ? 'rent' : 'sale'} {project.name}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
-            {sortedListings.map((l: any) => (
-              <div key={l.id} className="group bg-white rounded-[10px] border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-                {/* Image Section */}
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={l.property_listing_galleries?.[0]?.image_url || `https://picsum.photos/seed/list${l.id}/400/300`}
-                    alt={l.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-                    <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
-                  </div>
-                </div>
-                {/* Content Section */}
-                <div className="p-4 flex flex-col flex-1">
-                  <p className="text-[20px] font-outfit font-medium text-[#002143] mb-1">
-                    ₱ {Number(l.price).toLocaleString()}
-                  </p>
-                  <div className="flex items-center gap-4 text-[#002143] mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <BedDouble size={18} />
-                      <span className="text-[14px] font-outfit font-light">{l.project_units?.bedrooms || 1}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Bath size={18} />
-                      <span className="text-[14px] font-outfit font-light">{l.project_units?.bathrooms || 2}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Square size={16} />
-                      <span className="text-[14px] font-outfit font-light">{l.project_units?.floor_area_sqm || 0} sqm</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-1 text-[#002143]">
-                    <MapPin size={16} className="shrink-0 mt-0.5" />
-                    <p className="text-[13px] font-outfit font-light leading-snug line-clamp-1">
-                      {project.name}, {project.city_municipality}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {projectListings.length === 0 && (
-            <div className="py-20 text-center">
-              <p className="text-xl font-outfit text-gray-500">No listings found for this project.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Right Side: Map */}
-        <div className="flex-1 h-full bg-gray-100 relative">
-          <MapContainer center={mapCenter} zoom={15} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
-            <MapResizer />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {project.latitude && project.longitude && (
-              <Marker position={mapCenter}>
-                <Popup>
-                  <div className="font-outfit">
-                    <p className="font-semibold text-[#002143]">{project.name}</p>
-                    <p className="text-[12px] font-light text-[#002143]">{project.city_municipality}, Philippines</p>
-                  </div>
-                </Popup>
-              </Marker>
-            )}
-          </MapContainer>
-
-          {/* List / Map toggle */}
-          <div className="absolute top-4 left-4 z-[1000]">
-            <ListMapToggle activeView="map" />
-          </div>
-        </div>
-      </div>
+      <ListingMapView
+        listings={adaptedListings}
+        mode={mode}
+        searchParams={normalizedSearchParams}
+      />
     )
   }
 

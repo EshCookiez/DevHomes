@@ -1,40 +1,57 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { BedDouble, Bath, Maximize2, MapPin, LayoutList } from 'lucide-react'
-import { PublicProject } from '@/lib/projects-public'
+import type { PublicListingSearchRecord, ListingSearchMode } from '@/lib/property-search'
+import type { PublicProject } from '@/lib/projects-public'
+import type { ListingPopupData } from '@/components/projects/ProjectMap'
 
-// Dynamically import the entire map component with ssr: false
-const ProjectMap = dynamic(() => import('./ProjectMap'), { ssr: false })
+const ProjectMap = dynamic(() => import('@/components/projects/ProjectMap'), { ssr: false })
 
-interface ProjectMapViewProps {
-  projects: PublicProject[]
+interface ListingMapViewProps {
+  listings: PublicListingSearchRecord[]
+  mode: ListingSearchMode
   searchParams: Record<string, string | undefined>
 }
 
-function MapPropertyCard({ project, onClick, isSelected }: { project: PublicProject; onClick?: () => void; isSelected?: boolean }) {
-  const price = project.price_range_min
-    ? `PHP ${Number(project.price_range_min).toLocaleString()}`
+function ListingMapCard({
+  listing,
+  onClick,
+  isSelected,
+}: {
+  listing: PublicListingSearchRecord
+  onClick?: () => void
+  isSelected?: boolean
+}) {
+  const [isHovered, setIsHovered] = React.useState(false)
+  const price = listing.price
+    ? `PHP ${Number(listing.price).toLocaleString()}`
     : 'Price on request'
 
-  const units = project.project_units ?? []
-  const maxBeds = units.length > 0 ? Math.max(...units.map(u => u.bedrooms ?? 0)) : null
-  const maxBaths = units.length > 0 ? Math.max(...units.map(u => u.bathrooms ?? 0)) : null
-  const maxArea = units.length > 0 ? Math.max(...units.map(u => u.floor_area_sqm ?? 0)) : null
+  const unit = listing.project_units
+  const beds = unit?.bedrooms
+  const baths = unit?.bathrooms
+  const area = unit?.floor_area_sqm
 
-  const images = project.main_image_url
-    ? [project.main_image_url]
-    : [`https://picsum.photos/seed/${project.slug}/260/186`]
+  const image =
+    listing.property_listing_galleries[0]?.image_url ||
+    listing.projects?.main_image_url ||
+    `https://picsum.photos/seed/${listing.id}/260/186`
 
-  const location = [project.name, project.city_municipality, project.province]
+  const location = [
+    listing.projects?.city_municipality,
+    listing.projects?.province,
+  ]
     .filter(Boolean)
     .join(', ')
 
   return (
     <div
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         width: '260px',
         background: '#FFFFFF',
@@ -44,6 +61,11 @@ function MapPropertyCard({ project, onClick, isSelected }: { project: PublicProj
         cursor: onClick ? 'pointer' : undefined,
         outline: isSelected ? '2.5px solid #1428AE' : undefined,
         outlineOffset: '-2.5px',
+        transform: isHovered ? 'translateY(-8px)' : 'translateY(0)',
+        boxShadow: isHovered ? '0px 20px 40px rgba(0,33,67,0.12)' : undefined,
+        zIndex: isHovered ? 50 : undefined,
+        transition: 'transform 0.3s, box-shadow 0.3s',
+        position: 'relative',
       }}
     >
       {/* Image */}
@@ -58,8 +80,8 @@ function MapPropertyCard({ project, onClick, isSelected }: { project: PublicProj
         }}
       >
         <img
-          src={images[0]}
-          alt={project.name}
+          src={image}
+          alt={listing.title}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
         {/* Carousel dots */}
@@ -107,44 +129,20 @@ function MapPropertyCard({ project, onClick, isSelected }: { project: PublicProj
           }}
         >
           <BedDouble size={20} color="#002143" />
-          <span
-            style={{
-              fontFamily: 'Outfit',
-              fontWeight: 300,
-              fontSize: '15px',
-              lineHeight: '15px',
-              color: '#002143',
-            }}
-          >
-            {maxBeds !== null ? maxBeds : '—'}
+          <span style={{ fontFamily: 'Outfit', fontWeight: 300, fontSize: '15px', lineHeight: '15px', color: '#002143' }}>
+            {beds !== null && beds !== undefined ? beds : '—'}
           </span>
           <Bath size={20} color="#002143" style={{ transform: 'scaleX(-1)' }} />
-          <span
-            style={{
-              fontFamily: 'Outfit',
-              fontWeight: 300,
-              fontSize: '15px',
-              lineHeight: '15px',
-              color: '#002143',
-            }}
-          >
-            {maxBaths !== null ? maxBaths : '—'}
+          <span style={{ fontFamily: 'Outfit', fontWeight: 300, fontSize: '15px', lineHeight: '15px', color: '#002143' }}>
+            {baths !== null && baths !== undefined ? baths : '—'}
           </span>
           <Maximize2 size={20} color="#002143" style={{ transform: 'scaleX(-1)' }} />
-          <span
-            style={{
-              fontFamily: 'Outfit',
-              fontWeight: 300,
-              fontSize: '15px',
-              lineHeight: '15px',
-              color: '#002143',
-            }}
-          >
-            {maxArea !== null && maxArea > 0 ? `${maxArea} sqm` : '—'}
+          <span style={{ fontFamily: 'Outfit', fontWeight: 300, fontSize: '15px', lineHeight: '15px', color: '#002143' }}>
+            {area !== null && area !== undefined && area > 0 ? `${area} sqm` : '—'}
           </span>
         </div>
 
-        {/* Location */}
+        {/* Title */}
         <div
           style={{
             fontFamily: 'Outfit',
@@ -153,12 +151,15 @@ function MapPropertyCard({ project, onClick, isSelected }: { project: PublicProj
             lineHeight: '15px',
             color: '#002143',
             marginBottom: '8px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
-          {location}
+          {listing.title}
         </div>
 
-        {/* Developer */}
+        {/* Location */}
         <div
           style={{
             fontFamily: 'Outfit',
@@ -168,33 +169,113 @@ function MapPropertyCard({ project, onClick, isSelected }: { project: PublicProj
             color: '#7D868F',
           }}
         >
-          {project.developers_profiles?.developer_name || ''}
+          {location}
         </div>
       </div>
     </div>
   )
 }
 
-export default function ProjectMapView({ projects, searchParams }: ProjectMapViewProps) {
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
-  const selectedProject = selectedProjectId != null ? (projects.find(p => p.id === selectedProjectId) ?? null) : null
+function listingsToMapProjects(listings: PublicListingSearchRecord[]): PublicProject[] {
+  const projectMap = new Map<number, PublicProject & { _minPrice: number | null }>()
+
+  for (const listing of listings) {
+    const p = listing.projects
+    if (!p?.id || p.latitude == null || p.longitude == null) continue
+
+    if (!projectMap.has(p.id)) {
+      projectMap.set(p.id, {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        project_type: p.project_type,
+        status: 'published',
+        province: p.province,
+        city_municipality: p.city_municipality,
+        price_range_min: listing.price,
+        price_range_max: null,
+        main_image_url:
+          listing.property_listing_galleries[0]?.image_url ?? p.main_image_url,
+        video_tour_url: null,
+        is_featured: false,
+        created_at: listing.created_at ?? '',
+        latitude: p.latitude,
+        longitude: p.longitude,
+        developers_profiles: listing.developers_profiles
+          ? {
+              developer_name: listing.developers_profiles.developer_name ?? '',
+              logo_url: listing.developers_profiles.logo_url,
+            }
+          : null,
+        project_units: [],
+        project_amenities: [],
+        _minPrice: listing.price,
+      })
+    } else {
+      const existing = projectMap.get(p.id)!
+      if (
+        listing.price !== null &&
+        (existing._minPrice === null || listing.price < existing._minPrice)
+      ) {
+        existing.price_range_min = listing.price
+        existing._minPrice = listing.price
+      }
+    }
+
+    if (listing.project_units) {
+      const proj = projectMap.get(p.id)!
+      const unit = listing.project_units
+      if (!proj.project_units.some((u) => u.id === unit.id)) {
+        proj.project_units.push({
+          id: unit.id,
+          unit_type: unit.unit_type,
+          bedrooms: unit.bedrooms,
+          bathrooms: unit.bathrooms,
+          floor_area_sqm: unit.floor_area_sqm,
+        })
+      }
+    }
+  }
+
+  return Array.from(projectMap.values())
+}
+
+export default function ListingMapView({ listings, mode, searchParams }: ListingMapViewProps) {
+  const [selectedListingId, setSelectedListingId] = useState<number | null>(null)
+  const [mapProjectId, setMapProjectId] = useState<number | null>(null)
+
+  const mapProjects = useMemo(() => listingsToMapProjects(listings), [listings])
+
+  const selectedProjectId = mapProjectId
+
+  const selectedProject =
+    mapProjectId != null
+      ? (mapProjects.find((p) => p.id === mapProjectId) ?? null)
+      : null
+
+  const selectedListingData = useMemo((): ListingPopupData | null => {
+    if (selectedListingId == null) return null
+    const l = listings.find((r) => r.id === selectedListingId)
+    if (!l) return null
+    return {
+      price: l.price ?? null,
+      bedrooms: l.project_units?.bedrooms ?? null,
+      bathrooms: l.project_units?.bathrooms ?? null,
+      floor_area_sqm: l.project_units?.floor_area_sqm ?? null,
+      image_url: l.property_listing_galleries[0]?.image_url ?? l.projects?.main_image_url ?? null,
+      title: l.title,
+    }
+  }, [selectedListingId, listings])
 
   const locationText = searchParams.location || 'Philippines'
-  const contractText = searchParams.status === 'Rent' ? 'rent' : 'sale'
+  const contractText = mode === 'sale' ? 'sale' : 'rent'
 
   return (
-    /*
-     * Break out of the padded <main> to full viewport width.
-     * The flex row mirrors the Figma split:
-     *   left panel  → 860px fixed (cards list)
-     *   right panel → flex-1 (map)
-     */
     <div
       style={{
         display: 'flex',
         flexDirection: 'row',
         height: '772px',
-        /* Full-viewport-width breakout */
         width: '100vw',
         position: 'relative',
         left: '50%',
@@ -203,9 +284,7 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
         overflow: 'hidden',
       }}
     >
-      {/* ─────────────────────────────────────────────────────────────
-          LEFT PANEL  (0–860px in the Figma canvas)
-      ───────────────────────────────────────────────────────────── */}
+      {/* ── LEFT PANEL (860px) ── */}
       <div
         style={{
           width: '860px',
@@ -216,7 +295,7 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
           overflow: 'hidden',
         }}
       >
-        {/* ── Toolbar row (top 118px) ── */}
+        {/* Toolbar row */}
         <div
           style={{
             position: 'absolute',
@@ -229,7 +308,6 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
             borderBottom: '1px solid #D3D3D3',
           }}
         >
-          {/* Return to regular search */}
           <Link
             href={{ query: { ...searchParams, view: 'list' } }}
             style={{
@@ -253,9 +331,11 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
             Return to regular search
           </Link>
 
-          {/* Clear Filters */}
           <button
-            onClick={() => (window.location.href = '/projects')}
+            onClick={() => {
+              const base = mode === 'sale' ? '/buy' : '/rent'
+              window.location.href = base
+            }}
             style={{
               position: 'absolute',
               top: '17px',
@@ -274,7 +354,6 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
             Clear Filters
           </button>
 
-          {/* Title */}
           <h2
             style={{
               position: 'absolute',
@@ -293,7 +372,7 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
           </h2>
         </div>
 
-        {/* ── Scrollable cards area ── */}
+        {/* Scrollable cards area */}
         <div
           style={{
             position: 'absolute',
@@ -310,7 +389,7 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
           }}
           className="scrollbar-hide"
         >
-          {projects.length === 0 ? (
+          {listings.length === 0 ? (
             <div style={{ paddingTop: '80px', textAlign: 'center' }}>
               <p style={{ fontFamily: 'Outfit', fontSize: '18px', color: '#7D868F' }}>
                 No properties found matching your filters.
@@ -325,12 +404,16 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
                 rowGap: '32px',
               }}
             >
-              {projects.map(p => (
-                <MapPropertyCard
-                  key={p.id}
-                  project={p}
-                  isSelected={selectedProjectId === p.id}
-                  onClick={() => setSelectedProjectId(prev => prev === p.id ? null : p.id)}
+              {listings.map((listing) => (
+                <ListingMapCard
+                  key={listing.id}
+                  listing={listing}
+                  isSelected={selectedListingId === listing.id}
+                  onClick={() => {
+                    const newId = selectedListingId === listing.id ? null : listing.id
+                    setSelectedListingId(newId)
+                    setMapProjectId(newId != null ? (listing.projects?.id ?? null) : null)
+                  }}
                 />
               ))}
             </div>
@@ -338,9 +421,7 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          RIGHT PANEL  (map, flex-1 fills remaining viewport width)
-      ───────────────────────────────────────────────────────────── */}
+      {/* ── RIGHT PANEL (map, flex-1) ── */}
       <div
         style={{
           flex: 1,
@@ -350,7 +431,7 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
           overflow: 'hidden',
         }}
       >
-        {/* List / Map toggle — overlaid top-left of map panel */}
+        {/* List / Map toggle */}
         <div
           style={{
             position: 'absolute',
@@ -411,13 +492,13 @@ export default function ProjectMapView({ projects, searchParams }: ProjectMapVie
           </div>
         </div>
 
-        {/* Map — popup is rendered inside the map via MarkerPopupOverlay portal */}
         <ProjectMap
-          projects={projects}
+          projects={mapProjects}
           selectedProjectId={selectedProjectId}
-          onMarkerClick={(id) => setSelectedProjectId(prev => prev === id ? null : id)}
+          onMarkerClick={(id) => setMapProjectId((prev) => (prev === id ? null : id))}
           selectedProject={selectedProject}
-          onPopupClose={() => setSelectedProjectId(null)}
+          onPopupClose={() => { setMapProjectId(null); setSelectedListingId(null) }}
+          selectedListing={selectedListingData}
         />
       </div>
     </div>

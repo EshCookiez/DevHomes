@@ -4,11 +4,11 @@ import SiteHeader from '@/components/layout/SiteHeader'
 import SiteFooter from '@/components/layout/SiteFooter'
 import { getSiteSettings } from '@/lib/site-settings'
 import { SELECTED_LOCATION_COOKIE } from '@/lib/selected-location'
-import AdBanner from '@/components/ui/AdBanner'
 import { formatLocationForNews } from '@/lib/news-navigation'
 import { getArticles as getArticlesFromAPI } from '@/lib/hybrid-articles'
 import { RealEstateNewsSection } from '@/components/news/RealEstateNewsSection'
 import { CityNewsExplorer } from '@/components/news/CityNewsExplorer'
+import { NewsTicker } from '@/components/news/NewsTicker'
 
 interface Article {
   id: number | string
@@ -194,110 +194,34 @@ function extractArticleCollection(payload: unknown): ArticleCollection {
   }
 }
 
-function StoryImage({ article, className }: { article: Article; className: string }) {
+// ── Image helper ──────────────────────────────────────────────────────────────
+function NewsImage({ article, className }: { article: Article; className: string }) {
   const image = getImage(article)
   if (!image) {
-    return <div className={`${className} bg-gradient-to-br from-slate-800 via-[#1428ae] to-slate-950`} />
+    return <div className={`${className} bg-gradient-to-br from-[#1428ae]/80 to-[#002143]`} />
   }
-
-  return <img src={image} alt={article.title} className={className} />
+  return <img src={image} alt={article.title} className={`${className} object-cover`} />
 }
 
-function MetaRow({ article, emphasizeLocation = false }: { article: Article; emphasizeLocation?: boolean }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
-      {article.location && (
-        <span className={emphasizeLocation ? 'rounded-full bg-blue-50 px-2.5 py-1 font-black uppercase tracking-wider text-[#1428ae]' : 'font-semibold text-gray-500'}>
-          {article.location}
-        </span>
-      )}
-      <span>{timeAgo(article.published_at)}</span>
-      {article.read_time ? <span>{article.read_time} min read</span> : null}
-      {(article.views_count ?? 0) > 0 ? <span>{(article.views_count ?? 0).toLocaleString()} views</span> : null}
-    </div>
-  )
-}
-
-function CompactStory({ article }: { article: Article }) {
-  return (
-    <Link
-      href={`/news/${article.slug}`}
-      className="group flex gap-4 rounded-[22px] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3.5 transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_45px_-24px_rgba(15,23,42,0.28)]"
-    >
-      <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-[18px] bg-slate-100 ring-1 ring-black/5">
-        <StoryImage article={article} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/35 to-transparent" />
-      </div>
-      <div className="min-w-0 flex-1">
-        {article.category ? (
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">{article.category}</p>
-        ) : null}
-        <p className="line-clamp-2 text-[15px] font-extrabold leading-snug text-slate-950 transition-colors group-hover:text-[#1428ae]">
-          {article.title}
-        </p>
-        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500">{getExcerpt(article)}</p>
-        <div className="mt-3">
-          <MetaRow article={article} emphasizeLocation />
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-function ProfessionalStoryCard({ article, compact = false }: { article: Article; compact?: boolean }) {
-  return (
-    <Link
-      href={`/news/${article.slug}`}
-      className="group news-card-anim overflow-hidden rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_22px_55px_-26px_rgba(15,23,42,0.28)]"
-    >
-      <div className={compact ? 'relative h-44 overflow-hidden bg-slate-100' : 'relative h-56 overflow-hidden bg-slate-100'}>
-        <StoryImage article={article} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          {article.category ? (
-            <span className="rounded-full bg-white/88 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-slate-900 backdrop-blur-sm">
-              {article.category}
-            </span>
-          ) : null}
-          {article.is_live ? (
-            <span className="rounded-full bg-red-600 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-white">Live</span>
-          ) : null}
-        </div>
-      </div>
-      <div className="p-5">
-        <MetaRow article={article} emphasizeLocation />
-        <p className={compact ? 'mt-3 line-clamp-2 text-lg font-extrabold leading-tight text-slate-950 transition-colors group-hover:text-[#1428ae]' : 'mt-3 line-clamp-2 text-[22px] font-extrabold leading-tight text-slate-950 transition-colors group-hover:text-[#1428ae]'}>
-          {article.title}
-        </p>
-        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-500">{getExcerpt(article)}</p>
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-4 text-xs text-slate-500">
-          <span className="truncate font-semibold text-slate-700">{article.author ?? 'HomesPH News Desk'}</span>
-          {article.read_time ? <span className="rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-500">{article.read_time} min</span> : null}
-        </div>
-      </div>
-    </Link>
-  )
-}
-
+// ── Left column (295px) ───────────────────────────────────────────────────────
 function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLatest: Article[] }) {
   return (
-    <div className="space-y-0">
+    <div className="flex flex-col gap-0">
       {leadStory ? (
-        <Link
-          href={`/news/${leadStory.slug}`}
-          className="group block overflow-hidden mb-6"
-        >
-          <div className="relative h-[185px] overflow-hidden rounded-[20px]">
-            <StoryImage article={leadStory} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <Link href={`/news/${leadStory.slug}`} className="group block overflow-hidden mb-5">
+          <div className="relative w-full overflow-hidden rounded-[10px] bg-[#D9D9D9]" style={{ height: 181 }}>
+            <NewsImage article={leadStory} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
           </div>
-          <div className="bg-gray-50 px-0 py-3">
-            <p className="text-left line-clamp-2 text-sm font-bold transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
+          <div className="pt-3">
+            <p
+              className="line-clamp-2 font-[500] text-[18px] leading-[25px] group-hover:text-[#1428ae] transition-colors"
+              style={{ fontFamily: 'Outfit', color: '#002143' }}
+            >
               {leadStory.title}
             </p>
           </div>
         </Link>
       ) : null}
-
       <div className="space-y-4">
         {localLatest.slice(0, 5).map((article, index) => (
           <div key={article.id}>
@@ -314,85 +238,104 @@ function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLate
   )
 }
 
+// ── Middle column (677px) ─────────────────────────────────────────────────────
 function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadRest?: Article[] }) {
   const textArticle = leadRest[0]
   const gridArticles = leadRest.slice(1, 4)
 
   return (
-    <div className="space-y-0">
+    <div className="flex flex-col gap-0">
       {leadStory ? (
         <Link href={`/news/${leadStory.slug}`} className="group block overflow-hidden">
-          <div className="relative h-[330px] overflow-hidden rounded-[20px]">
-            <StoryImage article={leadStory} className="h-full w-full object-cover opacity-95 transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute left-4 top-4">
-              {leadStory.is_live ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-white">
-                  <span className="inline-block h-2 w-2 rounded-full bg-white"></span>
-                  Live Updates
-                </span>
-              ) : null}
+          <div className="relative overflow-hidden rounded-[15px] bg-[#D9D9D9]" style={{ height: 328 }}>
+            <NewsImage article={leadStory} className="w-full h-full transition-transform duration-700 group-hover:scale-105" />
+            {/* Bottom gradient */}
+            <div className="absolute inset-x-0 bottom-0 rounded-b-[15px]" style={{ height: 184, background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, #000000 100%)' }} />
+            {/* LIVE UPDATES badge */}
+            <div className="absolute left-5" style={{ bottom: 35 }}>
+              <span
+                className="inline-flex items-center gap-2 px-4 py-2 text-[15px] font-[600]"
+                style={{
+                  fontFamily: 'Outfit',
+                  background: 'linear-gradient(90deg, #1428AE 0%, #004D9D 100%)',
+                  borderRadius: 20,
+                  color: '#FFFFFF',
+                  lineHeight: '15px',
+                }}
+              >
+                <span className="inline-block rounded-full bg-white" style={{ width: 5, height: 5 }} />
+                LIVE UPDATES
+              </span>
             </div>
           </div>
-          <div className="bg-gray-50 pt-[20px] px-0 pb-6">
-            <h2 className="text-left text-xl font-extrabold leading-tight" style={{ fontFamily: 'Outfit', color: '#002143' }}>
+          <div className="pt-5 pb-3">
+            <h2
+              className="line-clamp-2 font-[500] text-[20px] leading-[28px] group-hover:text-[#1428ae] transition-colors"
+              style={{ fontFamily: 'Outfit', color: '#002143' }}
+            >
               {leadStory.title}
             </h2>
           </div>
         </Link>
       ) : null}
 
-      <div className="mt-[15px] mb-3"></div>
+      <div className="border-b border-[#D0D0D0] mb-4" />
 
       {textArticle ? (
-        <Link href={`/news/${textArticle.slug}`} className="group block">
-          <h3 className="text-left text-lg font-extrabold leading-tight transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
+        <Link href={`/news/${textArticle.slug}`} className="group block mb-4">
+          <p
+            className="line-clamp-2 font-[300] text-[18px] leading-[18px] group-hover:text-[#1428ae] transition-colors"
+            style={{ fontFamily: 'Outfit', color: '#002143' }}
+          >
             {textArticle.title}
-          </h3>
+          </p>
         </Link>
       ) : null}
 
       {gridArticles.length > 0 ? (
-        <div className="space-y-4">
-          <div className="grid gap-3 grid-cols-3">
-            {gridArticles.map(article => (
-              <div key={article.id} className="space-y-2">
-                <Link href={`/news/${article.slug}`} className="group block">
-                  <div className="relative h-24 overflow-hidden rounded-[8px]">
-                    <StoryImage article={article} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  </div>
-                  <p className="line-clamp-2 text-xs font-bold transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
-                    {article.title}
-                  </p>
-                </Link>
-                <Link href={`/news/${article.slug}`} className="inline-block text-xs font-bold transition-colors hover:text-[#0c1f4a]" style={{ color: '#1428AE' }}>
-                  READ MORE
-                </Link>
-              </div>
-            ))}
-          </div>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          {gridArticles.map(article => (
+            <div key={article.id} className="flex flex-col gap-2">
+              <Link href={`/news/${article.slug}`} className="group block">
+                <div className="overflow-hidden rounded-[5px] bg-[#D9D9D9]" style={{ height: 126 }}>
+                  <NewsImage article={article} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
+                </div>
+                <p
+                  className="mt-2 line-clamp-2 font-[300] text-[12px] leading-[15px] group-hover:text-[#1428ae] transition-colors"
+                  style={{ fontFamily: 'Outfit', color: '#002143' }}
+                >
+                  {article.title}
+                </p>
+              </Link>
+              <Link
+                href={`/news/${article.slug}`}
+                className="inline-block font-[400] text-[12px] leading-[12px] hover:opacity-70 transition-opacity"
+                style={{ fontFamily: 'Outfit', color: '#1428AE' }}
+              >
+                READ MORE
+              </Link>
+            </div>
+          ))}
         </div>
       ) : null}
     </div>
   )
 }
 
+// ── Right column (295px) ──────────────────────────────────────────────────────
 function RightColumn({ leadRest }: { leadRest: Article[] }) {
   const featured = leadRest[3]
-  const catchUpItems = leadRest.slice(4, 8)
+  const catchUpItems = leadRest.slice(4, 7)
 
   return (
-    <div className="space-y-0">
+    <div className="flex flex-col gap-0">
       {featured ? (
-        <Link
-          href={`/news/${featured.slug}`}
-          className="group block overflow-hidden mb-6"
-        >
-          <div className="relative h-[185px] overflow-hidden rounded-[20px]">
-            <StoryImage article={featured} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <Link href={`/news/${featured.slug}`} className="group block overflow-hidden mb-5">
+          <div className="relative w-full overflow-hidden rounded-[10px] bg-[#D9D9D9]" style={{ height: 181 }}>
+            <NewsImage article={featured} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
           </div>
-          <div className="bg-gray-50 px-0 py-3">
-            <p className="text-left line-clamp-2 text-sm font-bold transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
+          <div className="pt-3">
+            <p className="line-clamp-2 font-[500] text-[18px] leading-[25px] group-hover:text-[#1428ae] transition-colors" style={{ fontFamily: 'Outfit', color: '#002143' }}>
               {featured.title}
             </p>
           </div>
@@ -400,22 +343,30 @@ function RightColumn({ leadRest }: { leadRest: Article[] }) {
       ) : null}
 
       <div>
-        <p className="text-left text-sm font-bold mb-4" style={{ fontFamily: 'Outfit', color: '#002143' }}>Catch up on today's news</p>
+        <div className="mb-3 border-t border-[#D0D0D0]" />
+        <p
+          className="mb-4 font-[500] text-[20px] leading-[20px]"
+          style={{ fontFamily: 'Outfit', color: '#002143' }}
+        >
+          Catch up on today&apos;s news
+        </p>
         <div className="space-y-0">
           {catchUpItems.map((article, index) => (
             <div key={article.id}>
-              <Link href={`/news/${article.slug}`} className="group flex gap-3">
-                <div className="h-14 w-16 shrink-0 overflow-hidden rounded-[8px] bg-gray-200">
-                  <StoryImage article={article} className="h-full w-full object-cover" />
+              <Link href={`/news/${article.slug}`} className="group flex gap-3 items-start">
+                <div className="shrink-0 overflow-hidden rounded-[5px] bg-[#D9D9D9]" style={{ width: 128, height: 79 }}>
+                  <NewsImage article={article} className="w-full h-full" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-left line-clamp-2 text-xs font-bold transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
+                  <p
+                    className="line-clamp-4 font-[300] text-[15px] leading-[20px] group-hover:text-[#1428ae] transition-colors"
+                    style={{ fontFamily: 'Outfit', color: '#002143' }}
+                  >
                     {article.title}
                   </p>
-                  <p className="mt-0.5 text-xs line-clamp-1 text-left" style={{ fontFamily: 'Outfit', color: '#666666' }}>{getExcerpt(article).substring(0, 40)}...</p>
                 </div>
               </Link>
-              {index < 3 && <div className="my-[7.5px] border-b border-gray-300"></div>}
+              {index < catchUpItems.length - 1 && <div className="my-3 border-b border-[#D0D0D0]" />}
             </div>
           ))}
         </div>
@@ -536,42 +487,9 @@ export default async function NewsPage({
 
   const [leadStory, ...leadRest] = leadFeed
   const localLatest = leadRest.slice(0, 5)
-  const tickerTitles = allArticles.slice(0, 12).map(article => article.title)
-  const tickerDuped = [...tickerTitles, ...tickerTitles]
-
-  const categoryGroups = groupArticles(allArticles, article => article.category)
-    .sort((a, b) => b.items.length - a.items.length || a.key.localeCompare(b.key))
-    .slice(0, 6)
-
-  const provinceGroups = groupArticles(allArticles, article => article.location ?? article.city)
-    .filter(group => group.key !== focusedLocation)
-    .sort((a, b) => b.items.length - a.items.length || a.key.localeCompare(b.key))
-    .slice(0, 8)
-
-  const topViewed = [...allArticles].sort(sortByViews).slice(0, 8)
-  const quickReads = allArticles.filter(article => (article.read_time ?? 99) <= 5).slice(0, 8)
-  const deepReads = allArticles.filter(article => (article.read_time ?? 0) >= 6 || article.category === 'Guides').slice(0, 6)
-  const heroViews = leadFeed[0]?.views_count && leadFeed[0].views_count > 0
-    ? leadFeed[0].views_count
-    : (topViewed[0]?.views_count ?? 0)
-
-  const topicGroups = groupArticles(allArticles, article => article.topics?.[0])
-    .sort((a, b) => b.items.length - a.items.length || a.key.localeCompare(b.key))
-    .slice(0, 6)
-
-  const authorGroups = groupArticles(allArticles, article => article.author)
-    .sort((a, b) => b.items.length - a.items.length || a.key.localeCompare(b.key))
-    .slice(0, 6)
-
-  const reservedIds = new Set<string>([
-    ...leadFeed.slice(0, 6).map(article => String(article.id)),
-    ...topViewed.slice(0, 8).map(article => String(article.id)),
-    ...quickReads.slice(0, 8).map(article => String(article.id)),
-  ])
-  const moreStories = allArticles.filter(article => !reservedIds.has(String(article.id))).slice(0, 48)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white" style={{ fontFamily: 'Outfit' }}>
       <SiteHeader
         logoUrl={settings.logoUrl}
         contactEmail={settings.contactEmail}
@@ -579,211 +497,151 @@ export default async function NewsPage({
         socialLinks={settings.socialLinks}
       />
 
-      <div className="overflow-hidden border-b border-gray-200 bg-white py-3 text-sm text-gray-900 shadow-sm">
-        <div className="flex items-stretch">
-          <span className="flex shrink-0 items-center bg-gradient-to-r from-blue-600 to-blue-700 px-5 text-[11px] font-black uppercase tracking-widest text-white">
-            Latest
-          </span>
-          <div className="ticker-track flex-1">
-            {tickerDuped.map((title, index) => (
-              <span key={`${title}-${index}`} className="inline-block shrink-0 px-6 text-sm font-medium text-gray-700 hover:text-blue-600">
-                <span className="mr-2 font-bold text-blue-600">•</span>
-                {title}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* ── News Ticker Bar ──────────────────────────────────────────── */}
+      <NewsTicker items={allArticles.slice(0, 12).map(a => ({ title: a.title, slug: a.slug }))} />
 
-      <main className="w-full">
-        <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[120px] 2xl:px-[230px] py-8">
-        {cityArticles.length === 0 ? (
-          <div className="py-28 text-center text-gray-400">
-            <p className="text-2xl font-extrabold text-gray-700">No Articles Found in This City</p>
-            <p className="mt-2 text-gray-500">There are currently no news articles available for <span className="font-semibold text-gray-700">{locationDisplayName}</span>.</p>
-            <Link href="/news" className="mt-6 inline-block px-6 py-3 rounded-xl bg-[#1428ae] text-white text-sm font-semibold hover:bg-[#0c1f4a] transition-colors">
-              Browse All News
-            </Link>
-          </div>
-        ) : (
-          <>
-            {/* MAIN 3-COLUMN GRID */}
-            <div className="flex justify-center w-full overflow-x-auto">
-              <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-[295px_620px_295px] lg:grid-cols-[295px_620px_295px] min-w-full md:min-w-max">
+      <main className="w-full bg-white">
+        {/* ── 3-Column Hero Section ───────────────────────────────────── */}
+        <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] pt-8 pb-0">
+          {cityArticles.length === 0 ? (
+            <div className="py-28 text-center">
+              <p className="text-2xl font-extrabold" style={{ color: '#002143' }}>No Articles Found</p>
+              <p className="mt-2" style={{ color: '#666666' }}>
+                There are currently no news articles available for{' '}
+                <span className="font-semibold" style={{ color: '#002143' }}>{locationDisplayName}</span>.
+              </p>
+              <Link
+                href="/news"
+                className="mt-6 inline-block px-6 py-3 rounded-xl text-white text-sm font-semibold transition-colors hover:opacity-90"
+                style={{ background: '#1428AE' }}
+              >
+                Browse All News
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:gap-8 grid-cols-1 lg:grid-cols-[295px_1fr_295px]">
               <LeftColumn leadStory={leadStory} localLatest={localLatest} />
               <MiddleColumn leadStory={leadStory} leadRest={leadRest} />
               <RightColumn leadRest={leadRest} />
-              </div>
             </div>
-
-            <div className="mt-8">
-              <AdBanner />
-            </div>
-          </>
-        )}
+          )}
         </div>
 
-        {/* Carousel Sections using new components */}
-        <div className="mt-6 space-y-[40px]">
-          {/* Real Estate Latest News - Global Carousel */}
+        {/* ── Ad Space ────────────────────────────────────────────────── */}
+        <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] mt-10">
+          <div
+            className="w-full flex items-center justify-center rounded-[20px]"
+            style={{ minHeight: 195, border: '1px dashed #1428AE', background: '#FFFFFF' }}
+          >
+            <span
+              className="font-[100] text-[80px] leading-[100px] text-center select-none"
+              style={{ fontFamily: 'Outfit', color: '#1428AE' }}
+            >
+              ADS SPACE
+            </span>
+          </div>
+        </div>
+
+        {/* ── Location Latest Updates ──────────────────────────────────── */}
+        <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] mt-10">
+          <h2
+            className="font-[500] text-[35px] leading-[35px] mb-6"
+            style={{ fontFamily: 'Outfit', color: '#1428AE' }}
+          >
+            {locationDisplayName} Latest Updates
+          </h2>
+
+          {/* 4-column news cards */}
+          <div className="grid gap-[22px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {allArticles.slice(0, 12).map(article => (
+              <Link
+                key={article.id}
+                href={`/news/${article.slug}`}
+                className="group flex flex-col overflow-hidden rounded-[15px] bg-white transition-shadow hover:shadow-lg"
+                style={{ boxShadow: '0px 1px 5px rgba(0,0,0,0.15)' }}
+              >
+                {/* Image */}
+                <div className="relative overflow-hidden rounded-t-[15px] rounded-b-[10px] bg-[#D9D9D9]" style={{ height: 278 }}>
+                  <NewsImage article={article} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
+                  {/* Bottom gradient overlay */}
+                  <div
+                    className="absolute inset-x-0 bottom-0 rounded-b-[10px]"
+                    style={{ height: 82, background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, #000000 100%)' }}
+                  />
+                  {/* Badge + Date */}
+                  <div className="absolute left-4 bottom-4 flex items-center gap-2">
+                    <span
+                      className="font-[400] text-[12px] leading-[12px] text-white px-3 py-1.5"
+                      style={{ background: '#3682E1', borderRadius: 10 }}
+                    >
+                      {article.category ?? 'News'}
+                    </span>
+                  </div>
+                  <div className="absolute right-3 bottom-[18px]">
+                    <span
+                      className="font-[300] text-[10px] leading-[10px] text-white text-center"
+                      style={{ fontFamily: 'Outfit' }}
+                    >
+                      {fmtDate(article.published_at)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card content */}
+                <div className="p-4 flex flex-col flex-1 gap-2">
+                  <p
+                    className="line-clamp-2 font-[500] text-[15px] leading-[20px] group-hover:text-[#1428ae] transition-colors"
+                    style={{ fontFamily: 'Outfit', color: '#002143' }}
+                  >
+                    {article.title}
+                  </p>
+                  <span
+                    className="mt-auto font-[400] text-[12px] leading-[12px] hover:opacity-70"
+                    style={{ fontFamily: 'Outfit', color: '#1428AE' }}
+                  >
+                    READ MORE
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Carousel Sections ────────────────────────────────────────── */}
+        <div className="mt-12 space-y-[43px]">
           <RealEstateNewsSection articles={allArticles} />
-          
-          {/* City Navigation + Location-specific Real Estate Grid */}
           <CityNewsExplorer
             allArticles={allArticles}
             currentLocation={focusedLocation || routeLocation}
           />
         </div>
 
-        {/* Continue with more content inside main padding */}
-        <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[120px] 2xl:px-[230px]">
-          {allArticles.length > 0 && (
-            <>
-            {/* MORE NEWS GRID */}
-            <section className="mt-12">
-              <h3 className="mb-6 text-2xl font-extrabold text-gray-950">More News</h3>
-              <div className="grid gap-6 lg:grid-cols-3">
-                {/* Left: Featured + List */}
-                <div className="rounded-[20px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-200/50">
-                  {allArticles[6] ? (
-                    <div className="mb-4">
-                      <ProfessionalStoryCard article={allArticles[6]} compact />
-                    </div>
-                  ) : null}
-                  <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
-                    {allArticles.slice(7, 11).map(article => (
-                      <Link key={article.id} href={`/news/${article.slug}`} className="group block text-sm font-semibold text-gray-950 transition-colors hover:text-[#1428ae] line-clamp-2">
-                        {article.title}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Center: Large + 2 Small */}
-                <div className="space-y-4">
-                  {allArticles[11] ? (
-                    <Link href={`/news/${allArticles[11].slug}`} className="group block overflow-hidden rounded-[20px] bg-gray-100">
-                      <div className="relative aspect-[3/2] overflow-hidden">
-                        <StoryImage article={allArticles[11]} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                        <div className="absolute inset-x-0 bottom-0 p-4">
-                          <p className="line-clamp-2 font-bold text-white">{allArticles[11].title}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ) : null}
-                  <div className="grid gap-3 grid-cols-2">
-                    {allArticles.slice(12, 14).map(article => (
-                      <Link key={article.id} href={`/news/${article.slug}`} className="group block overflow-hidden rounded-[14px] bg-gray-100">
-                        <div className="relative aspect-video overflow-hidden">
-                          <StoryImage article={article} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right: Thumbnails + Titles */}
-                <div className="rounded-[20px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-200/50">
-                  <div className="space-y-3">
-                    {allArticles.slice(14, 18).map(article => (
-                      <Link key={article.id} href={`/news/${article.slug}`} className="group flex gap-3 rounded-[12px] border border-gray-100 p-2 transition-all duration-200 hover:shadow-md hover:shadow-gray-200/50">
-                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[10px] bg-gray-200">
-                          <StoryImage article={article} className="h-full w-full object-cover" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="line-clamp-2 text-xs font-bold text-gray-950 transition-colors group-hover:text-[#1428ae]">
-                            {article.title}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* EXTRA NEWS: CATEGORY COLUMNS */}
-            {categoryGroups.length > 0 ? (
-              <section className="mt-12">
-                <h3 className="mb-6 text-2xl font-extrabold text-gray-950">Extra News</h3>
-                <div className="grid gap-6 lg:grid-cols-3">
-                  {categoryGroups.slice(0, 3).map(group => (
-                    <div key={group.key} className="rounded-[20px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-200/50">
-                      <p className="mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-[#1428ae]">{group.key}</p>
-                      <div className="space-y-3">
-                        {group.items.slice(0, 4).map(article => (
-                          <Link key={article.id} href={`/news/${article.slug}`} className="group block">
-                            <p className="line-clamp-2 text-sm font-bold text-gray-950 transition-colors group-hover:text-[#1428ae]">
-                              {article.title}
-                            </p>
-                            <p className="mt-1 text-[10px] text-gray-500">{timeAgo(article.published_at)}</p>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            {/* LATEST NEWS: DARK SECTION */}
-            <section className="mt-12 overflow-hidden rounded-[28px] bg-gray-950 p-8 text-white">
-              <h3 className="text-2xl font-extrabold">Latest News</h3>
-              <div className="mt-6 grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
-                {/* Left: Large featured */}
-                {allArticles[18] ? (
-                  <Link href={`/news/${allArticles[18].slug}`} className="group block overflow-hidden rounded-[20px]">
-                    <div className="relative aspect-[16/9]">
-                      <StoryImage article={allArticles[18]} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
-                      <div className="absolute inset-x-0 bottom-0 p-5">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">{allArticles[18].category}</p>
-                        <p className="mt-2 line-clamp-2 text-xl font-extrabold text-white">{allArticles[18].title}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ) : null}
-
-                {/* Right: List */}
-                <div className="space-y-3">
-                  {allArticles.slice(19, 24).map(article => (
-                    <Link key={article.id} href={`/news/${article.slug}`} className="group block border-l-2 border-amber-400 pl-4 py-2 transition-all duration-200">
-                      <p className="line-clamp-2 text-sm font-bold text-white transition-colors group-hover:text-amber-400">
-                        {article.title}
-                      </p>
-                      <p className="mt-1 text-[10px] text-gray-400">{timeAgo(article.published_at)}</p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* SHARE SECTION */}
-            <section className="mt-12 rounded-[28px] bg-gradient-to-r from-slate-100 to-blue-50 p-8 text-center">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-[#1428ae]">Share & Follow</p>
-              <h3 className="mt-3 text-2xl font-extrabold text-gray-950">Stay in the loop</h3>
-              <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-600">
-                Get the latest real estate news, market insights, and property updates delivered to your inbox.
-              </p>
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                <button className="rounded-full bg-[#1428ae] px-6 py-2 text-sm font-bold text-white transition-transform hover:scale-105">
-                  Share This Page
-                </button>
-                <button className="rounded-full border-2 border-[#1428ae] px-6 py-2 text-sm font-bold text-[#1428ae] transition-all hover:bg-[#1428ae] hover:text-white">
-                  Subscribe
-                </button>
-              </div>
-            </section>
-          </>
-        )}
+        {/* ── Areas Section ────────────────────────────────────────────── */}
+        <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] mt-10 pb-10">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <span
+              className="font-[500] text-[18px] leading-[18px] shrink-0"
+              style={{ fontFamily: 'Outfit', color: '#1428AE' }}
+            >
+              Areas:
+            </span>
+            {[
+              'Davao', 'Gensan', 'Cagayan de Oro', 'Butuan', 'Surigao', 'Ozamis',
+              'Bohol', 'Dumaguete', 'Bacolod', 'Cebu', 'Iloilo',
+              'BGC', 'Cavite', 'Manila', 'Pampanga', 'Taguig', 'Laguna',
+            ].map(city => (
+              <Link
+                key={city}
+                href={`/${city.toLowerCase().replace(/\s+/g, '-')}/news`}
+                className="font-[300] text-[18px] leading-[18px] hover:text-[#1428ae] transition-colors"
+                style={{ fontFamily: 'Outfit', color: '#002143' }}
+              >
+                {city}
+              </Link>
+            ))}
+          </div>
         </div>
       </main>
-
-      <div className="mt-10">
-        <AdBanner />
-      </div>
 
       <SiteFooter
         logoUrl={settings.logoUrl}
