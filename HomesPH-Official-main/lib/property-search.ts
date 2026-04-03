@@ -209,6 +209,8 @@ interface ProjectRow {
   project_type: string | null
   classification: string | null
   main_image_url: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 interface ProjectUnitRow {
@@ -294,6 +296,8 @@ export interface PublicListingSearchRecord {
     project_type: string | null
     classification: string | null
     main_image_url: string | null
+    latitude: number | null
+    longitude: number | null
   } | null
   project_units: {
     id: number
@@ -1397,7 +1401,7 @@ export async function searchPublicListings(
         admin
           .from('projects')
           .select(
-            'id,developer_id,name,slug,city_municipality,province,barangay,region,project_type,classification,main_image_url'
+            'id,developer_id,name,slug,city_municipality,province,barangay,region,project_type,classification,main_image_url,latitude,longitude'
           )
           .in('id', projectIds)
       )
@@ -1521,6 +1525,8 @@ export async function searchPublicListings(
           project_type: project.project_type,
           classification: project.classification,
           main_image_url: project.main_image_url,
+          latitude: project.latitude,
+          longitude: project.longitude,
         }
         : null,
       project_units: unit

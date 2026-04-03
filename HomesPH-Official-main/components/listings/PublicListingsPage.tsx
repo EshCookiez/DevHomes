@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import SiteFooter from '@/components/layout/SiteFooter'
 import SiteHeader from '@/components/layout/SiteHeader'
+import ListingMapView from './ListingMapView'
 import SearchFilter from '@/components/projects/SearchFilter'
 import {
   type ListingSearchMode,
@@ -71,6 +72,41 @@ export default async function PublicListingsPage({
   )
 
   const isSale = mode === 'sale'
+
+  // Normalise searchParams to Record<string, string | undefined> for map view
+  const viewParam = typeof searchParams.view === 'string'
+    ? searchParams.view
+    : Array.isArray(searchParams.view)
+      ? searchParams.view[0]
+      : undefined
+
+  if (viewParam === 'map') {
+    const normalizedSearchParams: Record<string, string | undefined> = {}
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (typeof value === 'string') normalizedSearchParams[key] = value
+      else if (Array.isArray(value) && value.length > 0) normalizedSearchParams[key] = value[0]
+    }
+    return (
+      <>
+        <div style={{ position: 'relative', zIndex: 50 }}>
+          <SiteHeader
+            logoUrl={settings.logoUrl}
+            contactEmail={settings.contactEmail}
+            contactPhone={settings.contactPhone}
+            socialLinks={settings.socialLinks}
+          />
+        </div>
+        <ListingMapView listings={listings} mode={mode} searchParams={normalizedSearchParams} />
+        <SiteFooter
+          logoUrl={settings.logoUrl}
+          contactEmail={settings.contactEmail}
+          contactPhone={settings.contactPhone}
+          socialLinks={settings.socialLinks}
+          brandName={settings.siteTitle}
+        />
+      </>
+    )
+  }
 
   return (
     <>
