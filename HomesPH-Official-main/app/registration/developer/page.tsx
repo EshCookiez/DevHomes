@@ -2,6 +2,7 @@ import SiteHeader from '../../../components/layout/SiteHeader'
 import SiteFooter from '../../../components/layout/SiteFooter'
 import { getSiteSettings } from '../../../lib/site-settings'
 import DeveloperRegisterForm from '../../../components/auth/DeveloperRegisterForm'
+import { Suspense } from 'react'
 
 export default async function DeveloperRegisterPage() {
   const settings = await getSiteSettings()
@@ -102,7 +103,9 @@ export default async function DeveloperRegisterPage() {
         {/* ── Right: Form panel ── */}
         <div className="flex-1 flex items-start lg:items-center justify-center px-5 pb-12 pt-0 lg:py-14 bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
           <div className="w-full flex justify-center -mt-10 lg:mt-0">
-            <DeveloperRegisterForm />
+            <Suspense fallback={<div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md h-96 flex items-center justify-center">Loading form...</div>}>
+              <DeveloperRegisterForm />
+            </Suspense>
           </div>
         </div>
 
