@@ -1,14 +1,6 @@
 import PublicListingsPage from '@/components/listings/PublicListingsPage'
 import type { PropertySearchParamsInput } from '@/lib/property-search'
 import type { RentPHProperty, RentPHResponse } from '@/components/listings/RentPHListingsGrid'
-import { redirect } from 'next/navigation'
-import { normalizeLocationSlug } from '@/lib/url-slugs'
-
-export const metadata = {
-  title: 'Properties for Rent in the Philippines | HomesPH',
-  description:
-    'Browse thousands of rental properties across the Philippines. Filter by location, price, beds, and more.',
-}
 
 const RENTPH_API = process.env.RENTPH_API_URL ?? 'https://rent.ph/api'
 
@@ -30,24 +22,12 @@ async function fetchRentPHListings(page = 1): Promise<{ listings: RentPHProperty
   }
 }
 
-export default async function RentPage(props: {
+export default async function RentByLocationPage(props: {
+  params: Promise<{ location: string }>
   searchParams?: Promise<PropertySearchParamsInput>
 }) {
+  const { location } = await props.params
   const searchParams = (await props.searchParams) ?? {}
-  const location = typeof searchParams.location === 'string' ? searchParams.location : undefined
-  const locationSlug = normalizeLocationSlug(location)
-
-  if (locationSlug) {
-    const params = new URLSearchParams()
-    for (const [key, value] of Object.entries(searchParams)) {
-      if (key === 'location') continue
-      if (typeof value === 'string') params.set(key, value)
-      else if (Array.isArray(value)) value.forEach((entry) => params.append(key, entry))
-    }
-    const query = params.toString()
-    redirect(`/${locationSlug}/rent${query ? `?${query}` : ''}`)
-  }
-
   const rentPage = Math.max(1, parseInt(String(searchParams.rentPage ?? '1'), 10) || 1)
 
   const { listings: rentPHListings, total: rentPHTotal, lastPage: rentPHLastPage } = await fetchRentPHListings(rentPage)
@@ -55,7 +35,7 @@ export default async function RentPage(props: {
   return (
     <PublicListingsPage
       mode="rent"
-      searchParams={searchParams}
+      searchParams={{ ...searchParams, location }}
       rentPHListings={rentPHListings}
       rentPHTotal={rentPHTotal}
       rentPHPage={rentPage}

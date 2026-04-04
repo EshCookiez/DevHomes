@@ -2,14 +2,59 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useSelectedLocation } from '@/hooks/use-selected-location'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 
+const SECTION_ROUTES = new Set(['buy', 'rent', 'projects'])
+const STATIC_ROOT_SEGMENTS = new Set([
+  'buy',
+  'rent',
+  'projects',
+  'news',
+  'contact-us',
+  'login',
+  'registration',
+  'forgot-password',
+  'legal',
+  'developers',
+  'search',
+  'restaurant',
+  'tourism',
+  'our-company',
+  'mortgage',
+  'favorites',
+  'dashboard',
+])
+
+function buildPathForLocation(pathname: string, slug?: string) {
+  const segments = pathname.split('/').filter(Boolean)
+  const locationPrefix = slug ? `/${slug}` : ''
+
+  if (segments.length === 0) return slug ? `/${slug}` : '/'
+
+  const first = segments[0]
+  const second = segments[1]
+
+  // Root section routes: /buy, /rent, /projects
+  if (SECTION_ROUTES.has(first)) {
+    return `${locationPrefix}/${first}`
+  }
+
+  // Location-prefixed section routes: /cebu/buy, /cebu/rent, /cebu/projects
+  if (!STATIC_ROOT_SEGMENTS.has(first) && second && SECTION_ROUTES.has(second)) {
+    return `${locationPrefix}/${second}`
+  }
+
+  return slug ? `/${slug}` : '/'
+}
+
 export default function LocationSwitcher({ variant = 'light' }: { variant?: 'light' | 'dark' | 'pill' }) {
-  const { selectedLocation, setSelectedLocation } = useSelectedLocation()
+  const { selectedLocation, setSelectedLocation, clearSelectedLocation } = useSelectedLocation()
   const [locations, setLocations] = useState<{ title: string; slug: string }[]>([])
   const [open, setOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -37,13 +82,31 @@ export default function LocationSwitcher({ variant = 'light' }: { variant?: 'lig
   function handleSelect(slug: string) {
     setSelectedLocation(slug)
     setOpen(false)
-    router.push(`/${slug}`)
+    const basePath = buildPathForLocation(pathname, slug)
+    const qs = searchParams.toString()
+    const nextHref = qs ? `${basePath}?${qs}` : basePath
+
+    if (nextHref === `${pathname}${qs ? `?${qs}` : ''}`) {
+      router.refresh()
+      return
+    }
+
+    router.replace(nextHref)
   }
 
   function handleSelectAll() {
-    setSelectedLocation(null as unknown as string)
+    clearSelectedLocation()
     setOpen(false)
-    router.push('/')
+    const basePath = buildPathForLocation(pathname)
+    const qs = searchParams.toString()
+    const nextHref = qs ? `${basePath}?${qs}` : basePath
+
+    if (nextHref === `${pathname}${qs ? `?${qs}` : ''}`) {
+      router.refresh()
+      return
+    }
+
+    router.replace(nextHref)
   }
 
   const isPill = variant === 'pill'

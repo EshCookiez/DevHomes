@@ -44,9 +44,9 @@ export default function LocationHero({
   const homeHref = buildContextHomeHref(locationSlug)
   const heroNavItems = [
     { label: 'Home', href: homeHref },
-    { label: 'Buy', href: `/buy?location=${encodeURIComponent(locationSlug)}` },
-    { label: 'Rent', href: `/rent?location=${encodeURIComponent(locationSlug)}` },
-    { label: 'Projects', href: `/projects?location=${encodeURIComponent(locationSlug)}` },
+    { label: 'Buy', href: `/${encodeURIComponent(locationSlug)}/buy` },
+    { label: 'Rent', href: `/${encodeURIComponent(locationSlug)}/rent` },
+    { label: 'Projects', href: `/${encodeURIComponent(locationSlug)}/projects` },
     { label: 'News', href: buildNewsHref(locationName) },
     { label: 'Contact Us', href: '/contact-us' },
   ]

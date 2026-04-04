@@ -1,29 +1,127 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/layout/SiteHeader'
 import SiteFooter from '@/components/layout/SiteFooter'
 import { getSiteSettings } from '@/lib/site-settings'
-import InquiryForm from '@/components/listings/InquiryForm'
 import { getPublicDeveloperBySlug } from '@/lib/developers-public'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { Search, ChevronDown } from 'lucide-react'
+import UnifiedListingCard from '@/components/listings/UnifiedListingCard'
 
-const fmt = (n?: number | null) => n ? `₱ ${Number(n).toLocaleString()}` : null
-const fmtRange = (min?: number | null, max?: number | null) => {
-  if (!min && !max) return 'Price on request'
-  if (min && max) return `${fmt(min)} – ${fmt(max)}`
-  return fmt(min ?? max) ?? 'Price on request'
+function EmailActionIcon() {
+  return (
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  )
+}
+
+function PhoneActionIcon() {
+  return (
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6.62 10.79a15.07 15.07 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.02l-2.2 2.2Z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  )
+}
+
+function ShareActionIcon() {
+  return (
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="18" cy="5" r="3" stroke="#FFFFFF" strokeWidth="2" />
+      <circle cx="6" cy="12" r="3" stroke="#FFFFFF" strokeWidth="2" />
+      <circle cx="18" cy="19" r="3" stroke="#FFFFFF" strokeWidth="2" />
+      <path d="M8.6 13.5 15.4 17.5M15.4 6.5 8.6 10.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function uniqueStrings(values: Array<string | null | undefined>) {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const value of values) {
+    const next = value?.trim()
+    if (!next) continue
+    if (seen.has(next)) continue
+    seen.add(next)
+    out.push(next)
+  }
+  return out
 }
 
 export default async function DeveloperDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: slug } = await params
-  const [settings, bundle] = await Promise.all([getSiteSettings(), getPublicDeveloperBySlug(slug)])
+  const [settings, bundle, supabase] = await Promise.all([
+    getSiteSettings(),
+    getPublicDeveloperBySlug(slug),
+    createServerSupabaseClient(),
+  ])
 
   if (!bundle) notFound()
 
-  const { developer: dev, contacts, addresses, projects: devProjects, contactInformation } = bundle
-  const primaryAddress = addresses[0]?.full_address ?? addresses[0]?.city ?? null
+  const { developer: dev, addresses, projects: devProjects, contactInformation } = bundle
+
+  const { data: listingsRows } = await supabase
+    .from('property_listings')
+    .select(`
+      id,
+      title,
+      listing_type,
+      price,
+      status,
+      created_at,
+      projects (
+        name,
+        city_municipality,
+        province,
+        project_type,
+        main_image_url
+      ),
+      project_units (
+        bedrooms,
+        bathrooms,
+        floor_area_sqm
+      ),
+      property_listing_galleries (
+        image_url,
+        display_order
+      )
+    `)
+    .eq('developer_id', dev.id)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .limit(4)
+
+  const activeListings = ((listingsRows ?? []) as any[]).map((row) => {
+    const gallery = [...(row.property_listing_galleries ?? [])].sort(
+      (left: any, right: any) => (left.display_order ?? 0) - (right.display_order ?? 0)
+    )
+    return {
+      id: row.id,
+      title: row.title,
+      listingType: row.listing_type,
+      price: row.price,
+      project: row.projects,
+      unit: row.project_units,
+      image: gallery[0]?.image_url ?? row.projects?.main_image_url ?? null,
+    }
+  })
+
+  const propertyTypes = uniqueStrings(devProjects.map((project) => project.project_type))
+  const serviceAreas = uniqueStrings(
+    devProjects.flatMap((project) => [project.city_municipality, project.province])
+  )
+  const saleCount = activeListings.filter((listing) => listing.listingType === 'sale').length
+  const rentCount = activeListings.filter((listing) => listing.listingType === 'rent').length
+  const listingCount = activeListings.length
+  const primaryAddress = addresses[0]?.city ?? addresses[0]?.full_address ?? 'Manila, Philippines'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <SiteHeader
         logoUrl={settings.logoUrl}
         contactEmail={settings.contactEmail}
@@ -31,179 +129,206 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
         socialLinks={settings.socialLinks}
       />
 
-      {/* ── Dark Hero Banner ── */}
-      <section className="bg-[#0c1f4a] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5 bg-[url('https://picsum.photos/seed/devhero/1200/400')] bg-cover bg-center" />
-        <div className="relative max-w-6xl mx-auto px-4 py-14 flex flex-col sm:flex-row items-center gap-8">
-          <div className="h-28 w-28 rounded-2xl border-4 border-white/20 overflow-hidden bg-white shadow-xl shrink-0">
-            <img src={dev.logo_url ?? undefined} alt={dev.developer_name} className="h-full w-full object-cover" />
-          </div>
-          <div className="text-center sm:text-left">
-            <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-2">Real Estate Developer</p>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white">{dev.developer_name}</h1>
-            <p className="text-white/60 text-sm mt-1.5">{dev.industry}</p>
-            {dev.website_url && (
-              <a href={dev.website_url} target="_blank" rel="noreferrer"
-                className="inline-block mt-3 text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2">
-                {dev.website_url}
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
+      <main className="w-full">
+        <section
+          style={{
+            background: 'linear-gradient(90deg, #B7B8D3 0%, #E7ECF5 100%)',
+            borderBottom: '1px solid #D3D3D3',
+            fontFamily: 'Outfit, sans-serif',
+          }}
+          className="min-h-[355px]"
+        >
+          <div className="mx-auto w-full max-w-[1920px] lg:relative lg:h-[355px]">
+            <div className="flex flex-col gap-6 px-4 pt-10 pb-8 sm:flex-row sm:items-start sm:gap-[40px] lg:hidden">
+              <div className="h-[220px] w-[220px] rounded-[10px] bg-white md:h-[275px] md:w-[275px]">
+                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#D9D9D9]">
+                  <img
+                    src={dev.logo_url ?? undefined}
+                    alt={dev.developer_name}
+                    className="h-[140px] w-[140px] object-contain md:h-[178px] md:w-[178px]"
+                  />
+                </div>
+              </div>
 
-      {/* ── Stats Band ── */}
-      <div className="bg-[#1428ae]">
-        <div className="max-w-6xl mx-auto px-4 py-5 grid grid-cols-2 divide-x divide-white/20 text-center">
-          {[
-            { value: `${devProjects.length}`, label: 'Projects' },
-            { value: `${new Set(devProjects.map(p => p.province).filter(Boolean)).size}`, label: 'Provinces' },
-          ].map(s => (
-            <div key={s.label} className="px-4">
-              <p className="text-xl font-extrabold text-white">{s.value}</p>
-              <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+              <div className="space-y-[15px]">
+                <div className="inline-flex h-[61px] items-center rounded-[10px] bg-white px-[15px]">
+                  <h1 className="text-[30px] font-medium leading-[30px] text-[#002143]">
+                    {dev.developer_name}
+                  </h1>
+                </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-12 space-y-10">
+                <div className="inline-flex h-[30px] items-center rounded-[6px] bg-white px-[15px] text-[15px] font-normal leading-[15px] text-[#002143]">
+                  Properties - {listingCount}
+                </div>
 
-        {/* ── About ── */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">About {dev.developer_name}</h2>
-          <p className="text-sm text-gray-600 leading-relaxed">{dev.description}</p>
-          {primaryAddress && (
-            <div className="mt-6 flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-500">
-                <span className="font-semibold text-gray-900">Headquarters:</span> {primaryAddress}
+                <div className="flex flex-wrap gap-[14px] pt-[20px]">
+                  <button className="inline-flex h-[50px] w-[110px] items-center justify-center gap-2 rounded-[10px] bg-[#1428AE] text-[18px] font-normal leading-[18px] text-white">
+                    <EmailActionIcon />
+                    Email
+                  </button>
+                  <button className="inline-flex h-[50px] w-[98px] items-center justify-center gap-2 rounded-[10px] bg-[#1428AE] text-[18px] font-normal leading-[18px] text-white">
+                    <PhoneActionIcon />
+                    Call
+                  </button>
+                  <button className="inline-flex h-[50px] w-[236px] items-center justify-center gap-2 rounded-[10px] bg-[#1428AE] text-[18px] font-normal leading-[18px] text-white">
+                    <ShareActionIcon />
+                    Share Agency Profile
+                  </button>
+                </div>
               </div>
             </div>
-          )}
-        </section>
 
-        {/* ── Contact + Persons ── */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {contactInformation && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-5">Contact Information</h2>
-              <dl className="space-y-3 text-sm">
-                {contactInformation.email && (
-                  <div className="flex items-start gap-3">
-                    <dt className="text-gray-400 shrink-0 w-28 text-xs uppercase tracking-wider pt-0.5">Email</dt>
-                    <dd><a href={`mailto:${contactInformation.email}`} className="text-[#1428ae] hover:underline">{contactInformation.email}</a></dd>
-                  </div>
-                )}
-                {contactInformation.primary_mobile && (
-                  <div className="flex items-start gap-3">
-                    <dt className="text-gray-400 shrink-0 w-28 text-xs uppercase tracking-wider pt-0.5">Mobile</dt>
-                    <dd><a href={`tel:${contactInformation.primary_mobile}`} className="text-gray-700">{contactInformation.primary_mobile}</a></dd>
-                  </div>
-                )}
-                {contactInformation.telephone && (
-                  <div className="flex items-start gap-3">
-                    <dt className="text-gray-400 shrink-0 w-28 text-xs uppercase tracking-wider pt-0.5">Telephone</dt>
-                    <dd><a href={`tel:${contactInformation.telephone}`} className="text-gray-700">{contactInformation.telephone}</a></dd>
-                  </div>
-                )}
-              </dl>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {contactInformation.facebook_url && (
-                  <a href={contactInformation.facebook_url} target="_blank" rel="noreferrer"
-                    className="text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
-                    Facebook
-                  </a>
-                )}
-                {contactInformation.instagram_url && (
-                  <a href={contactInformation.instagram_url} target="_blank" rel="noreferrer"
-                    className="text-xs px-3 py-1.5 rounded-full bg-pink-50 text-pink-700 hover:bg-pink-100 transition-colors">
-                    Instagram
-                  </a>
-                )}
-                {contactInformation.linkedin_url && (
-                  <a href={contactInformation.linkedin_url} target="_blank" rel="noreferrer"
-                    className="text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-900 hover:bg-blue-100 transition-colors">
-                    LinkedIn
-                  </a>
-                )}
+            <div className="relative hidden h-[355px] w-full lg:block">
+              <div className="absolute left-[296px] top-[40px] h-[275px] w-[275px] rounded-[10px] bg-white">
+                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#D9D9D9]">
+                  <img
+                    src={dev.logo_url ?? undefined}
+                    alt={dev.developer_name}
+                    className="h-[178px] w-[178px] object-contain"
+                  />
+                </div>
+              </div>
+
+              <div className="absolute left-[611px] top-[84px] inline-flex h-[61px] items-center rounded-[10px] bg-white px-[15px]">
+                <h1 className="text-center text-[30px] font-medium leading-[30px] text-[#002143]">
+                  {dev.developer_name}
+                </h1>
+              </div>
+
+              <div className="absolute left-[611px] top-[160px] inline-flex h-[30px] items-center rounded-[6px] bg-white px-[15px] text-center text-[15px] font-normal leading-[15px] text-[#002143]">
+                Properties - {listingCount}
+              </div>
+
+              <div className="absolute left-[611px] top-[220px] flex h-[50px] w-[473px] items-center gap-[14px]">
+                <button className="inline-flex h-[50.27px] w-[109.58px] items-center justify-center gap-2 rounded-[10px] bg-[#1428AE] text-[18px] font-normal leading-[18px] text-white">
+                  <EmailActionIcon />
+                  Email
+                </button>
+                <button className="inline-flex h-[50.27px] w-[97.51px] items-center justify-center gap-2 rounded-[10px] bg-[#1428AE] text-[18px] font-normal leading-[18px] text-white">
+                  <PhoneActionIcon />
+                  Call
+                </button>
+                <button className="inline-flex h-[50px] w-[236px] items-center justify-center gap-2 rounded-[10px] bg-[#1428AE] text-[18px] font-normal leading-[18px] text-white">
+                  <ShareActionIcon />
+                  Share Agency Profile
+                </button>
               </div>
             </div>
-          )}
-
-          {contacts.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-5">Our Team</h2>
-              <div className="space-y-4">
-                {contacts.map(cp => (
-                  <div key={cp.id} className="flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-full bg-[#1428ae]/10 flex items-center justify-center text-[#1428ae] font-bold text-sm shrink-0">
-                      {(cp.full_name ?? cp.fname ?? '?')[0]}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">{cp.full_name ?? [cp.fname, cp.lname].filter(Boolean).join(' ')}</p>
-                      <p className="text-xs text-amber-600 font-medium">{cp.position}</p>
-                      <div className="mt-1 flex flex-wrap gap-3 text-xs">
-                        {cp.email && <a href={`mailto:${cp.email}`} className="text-[#1428ae] hover:underline">{cp.email}</a>}
-                        {cp.mobile_number && <a href={`tel:${cp.mobile_number}`} className="text-gray-500">{cp.mobile_number}</a>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* ── Projects ── */}
-        <section>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-gray-900">
-              Projects <span className="text-base font-normal text-gray-400">({devProjects.length})</span>
-            </h2>
-            <Link href="/projects" className="text-sm text-[#1428ae] font-medium hover:text-amber-500 transition-colors">View all →</Link>
-          </div>
-          {devProjects.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {devProjects.map(p => (
-                <Link key={p.id} href={`/projects/${p.slug}`}
-                  className="group block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:border-[#1428ae]/20 transition-all">
-                  <div className="h-44 bg-gray-100 overflow-hidden">
-                    {p.main_image_url
-                      ? <img src={p.main_image_url} alt={p.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      : <div className="h-full flex items-center justify-center text-sm text-gray-400">No image</div>}
-                  </div>
-                  <div className="p-4 space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
-                        p.status === 'Ready for Occupancy' ? 'bg-green-50 text-green-700' :
-                        p.status === 'Pre-Selling' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
-                      }`}>{p.status}</span>
-                    </div>
-                    <h3 className="font-bold text-gray-900 text-sm group-hover:text-[#1428ae] transition-colors">{p.name}</h3>
-                    <p className="text-xs text-gray-500">{[p.city_municipality, p.province].filter(Boolean).join(', ')}</p>
-                    <p className="text-sm font-bold text-[#1428ae]">{fmtRange(p.price_range_min, p.price_range_max)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-              <p className="text-sm text-gray-400">No projects listed for this developer yet.</p>
-            </div>
-          )}
-        </section>
-
-        {/* ── Inquiry Form ── */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Send an Inquiry</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Interested in a project by {dev.developer_name}? Send us a message and we'll get back to you.
-          </p>
-          <div className="max-w-lg">
-            <InquiryForm listingTitle={`Inquiry — ${dev.developer_name}`} />
           </div>
         </section>
 
+        <section className="mx-auto w-full max-w-[1328px] px-4 py-8">
+          <div className="grid gap-8 lg:grid-cols-[945px_351px] lg:items-start">
+            <div>
+              <div className="grid gap-3 lg:grid-cols-[512px_197px_217px]">
+                <div className="flex h-[55px] items-center rounded-[10px] border border-[#D3D3D3] px-4">
+                  <Search size={18} className="text-[#002143]" />
+                  <input
+                    type="text"
+                    placeholder="City, community or building"
+                    className="ml-3 w-full border-none bg-transparent text-[20px] font-light text-[#002143] outline-none"
+                  />
+                </div>
+                <button className="flex h-[55px] items-center justify-between rounded-[10px] border border-[#D3D3D3] px-4 text-[22px] font-light text-[#002143]">
+                  Residential
+                  <ChevronDown size={24} />
+                </button>
+                <button className="flex h-[55px] items-center justify-between rounded-[10px] border border-[#D3D3D3] px-4 text-[22px] font-light text-[#002143]">
+                  Beds & Baths
+                  <ChevronDown size={24} />
+                </button>
+              </div>
+
+              <div className="mt-10">
+                <h2 className="text-[30px] font-normal leading-[30px] text-[#1428AE]">Active Listings</h2>
+                <div className="mt-4 flex items-center justify-between">
+                  <p className="text-[22px] font-light text-[#5E748B]">
+                    Showing 1 - {activeListings.length} of {activeListings.length} Properties
+                  </p>
+                  <button className="flex h-[45px] items-center gap-2 rounded-[10px] border border-[#D3D3D3] px-4 text-[18px] font-light text-[#002143]">
+                    Popular <ChevronDown size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-7 space-y-5">
+                {activeListings.map((listing) => {
+                  const locationText = [
+                    listing.project?.city_municipality,
+                    listing.project?.province,
+                    'Philippines',
+                  ].filter(Boolean).join(', ')
+
+                  const tags = [
+                    listing.title,
+                    'High Finishing',
+                    'Prime Location',
+                  ].filter(Boolean) as string[]
+
+                  return (
+                    <UnifiedListingCard
+                      key={listing.id}
+                      variant="buy-rent"
+                      href={`/listings/${listing.id}`}
+                      imageUrl={listing.image || 'https://via.placeholder.com/460x314'}
+                      developerLogoUrl={dev.logo_url ?? undefined}
+                      developerName={dev.developer_name}
+                      location={locationText || 'Philippines'}
+                      price={listing.price}
+                      propertyType={listing.project?.project_type}
+                      bedrooms={listing.unit?.bedrooms}
+                      bathrooms={listing.unit?.bathrooms}
+                      areaSqm={listing.unit?.floor_area_sqm}
+                      listingTitle={listing.title}
+                      tags={tags}
+                      className="w-full max-w-[946px]"
+                    />
+                  )
+                })}
+
+                {activeListings.length === 0 ? (
+                  <div className="rounded-[10px] border border-[#D3D3D3] bg-white p-10 text-center text-[#5E748B]">
+                    No active listings for this developer yet.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <aside className="pt-1">
+              <h3 className="text-[30px] font-normal leading-[30px] text-[#002143]">About</h3>
+              <div className="mt-5 space-y-5 text-[18px] leading-[25px] text-[#002143]">
+                <div>
+                  <p className="text-[20px] font-medium leading-[20px]">Property Types:</p>
+                  <p className="mt-3 text-[18px] font-light leading-[18px]">
+                    {propertyTypes.length > 0 ? propertyTypes.slice(0, 4).join(', ') : 'Apartments, Offices, Condominium'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[20px] font-medium leading-[20px]">Service Area:</p>
+                  <p className="mt-3 text-[18px] font-light leading-[18px]">
+                    {serviceAreas.length > 0 ? serviceAreas.slice(0, 4).join(', ') : primaryAddress}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[20px] font-medium leading-[20px]">Properties:</p>
+                  <p className="mt-3 text-[18px] font-light leading-[18px]">
+                    For Sale ({saleCount}){rentCount > 0 ? `, For Rent (${rentCount})` : ''}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[20px] font-medium leading-[20px]">Description:</p>
+                  <p className="mt-3 text-[18px] font-light leading-[25px]">
+                    {(dev.description ?? '').slice(0, 170)}{(dev.description ?? '').length > 170 ? '...' : ''}
+                  </p>
+                  {dev.description && dev.description.length > 170 ? (
+                    <a href="#" className="mt-2 inline-block text-[18px] font-medium text-[#1428AE]">Read more</a>
+                  ) : null}
+                </div>
+              </div>
+            </aside>
+          </div>
+
+        </section>
       </main>
 
       <SiteFooter

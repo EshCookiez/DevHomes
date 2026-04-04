@@ -29,7 +29,7 @@ function buildJourneySteps(locationName: string, locationSlug: string): JourneyS
       title: 'Browse Properties',
       description: `Search through thousands of verified listings across the Philippines. Filter by location, price, size, and more to find your perfect match.`,
       ctaLabel: 'Explore Listings',
-      ctaHref: `/buy?location=${encodeURIComponent(locationSlug)}`,
+      ctaHref: `/${encodeURIComponent(locationSlug)}/buy`,
       imageAlt: `Browse properties in ${locationName}`,
       imageClassName: 'object-[44%_50%]',
       imageWrapperClassName: 'rounded-r-[16px] sm:rounded-r-[18px]',

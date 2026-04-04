@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet'
 import type { Map as LeafletMap } from 'leaflet'
 import { PublicProject } from '@/lib/projects-public'
 import { BedDouble, Bath, Maximize2 } from 'lucide-react'
@@ -23,6 +23,16 @@ interface ProjectMapProps {
   selectedProject?: PublicProject | null
   onPopupClose?: () => void
   selectedListing?: ListingPopupData | null
+}
+
+interface LandmarkPin {
+  id: string
+  name: string
+  category: string
+  distanceMiles: number
+  imageUrl: string | null
+  latitude: number
+  longitude: number
 }
 
 function FitBoundsOnMount({ points }: { points: [number, number][] }) {
@@ -177,12 +187,51 @@ function MarkerPositionTracker({
   return null
 }
 
+function EnsureLandmarkPane() {
+  const map = useMap()
+
+  useEffect(() => {
+    let markerPane = map.getPane('landmarkMarkerPane')
+    if (!markerPane) {
+      markerPane = map.createPane('landmarkMarkerPane')
+    }
+    markerPane.style.zIndex = '1200'
+    markerPane.style.pointerEvents = 'auto'
+
+    let tooltipPane = map.getPane('landmarkTooltipPane')
+    if (!tooltipPane) {
+      tooltipPane = map.createPane('landmarkTooltipPane')
+    }
+    tooltipPane.style.zIndex = '1600'
+    tooltipPane.style.pointerEvents = 'auto'
+  }, [map])
+
+  return null
+}
+
 export default function ProjectMap({ projects, selectedProjectId, onMarkerClick, selectedProject, onPopupClose, selectedListing }: ProjectMapProps) {
   const [isClient, setIsClient] = useState(false)
   const [mapKey, setMapKey] = useState(1)
   const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null)
+  const [landmarkPins, setLandmarkPins] = useState<LandmarkPin[]>([])
+  const [hoveredLandmarkId, setHoveredLandmarkId] = useState<string | null>(null)
   const mapRef = useRef<LeafletMap | null>(null)
+  const landmarkHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const onPosition = useCallback((pos: { x: number; y: number } | null) => setPopupPos(pos), [])
+
+  const cancelLandmarkHide = useCallback(() => {
+    if (landmarkHideTimerRef.current) {
+      clearTimeout(landmarkHideTimerRef.current)
+      landmarkHideTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleLandmarkHide = useCallback((landmarkId: string) => {
+    cancelLandmarkHide()
+    landmarkHideTimerRef.current = setTimeout(() => {
+      setHoveredLandmarkId((prev) => (prev === landmarkId ? null : prev))
+    }, 180)
+  }, [cancelLandmarkHide])
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -202,6 +251,10 @@ export default function ProjectMap({ projects, selectedProjectId, onMarkerClick,
         try { mapRef.current.remove() } catch {}
         mapRef.current = null
       }
+      if (landmarkHideTimerRef.current) {
+        clearTimeout(landmarkHideTimerRef.current)
+        landmarkHideTimerRef.current = null
+      }
       setMapKey(k => k + 1)
     }
   }, [])
@@ -216,6 +269,39 @@ export default function ProjectMap({ projects, selectedProjectId, onMarkerClick,
     [validProjects]
   )
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchLandmarks() {
+      if (!selectedProject?.latitude || !selectedProject?.longitude) {
+        if (!cancelled) setLandmarkPins([])
+        return
+      }
+
+      const params = new URLSearchParams({
+        lat: String(selectedProject.latitude),
+        lng: String(selectedProject.longitude),
+      })
+      if (selectedProject.city_municipality) params.set('city', selectedProject.city_municipality)
+      if (selectedProject.province) params.set('province', selectedProject.province)
+
+      try {
+        const res = await fetch(`/api/landmarks/nearby?${params.toString()}`, { cache: 'no-store' })
+        if (!res.ok) throw new Error(`Landmark API failed: ${res.status}`)
+        const data = (await res.json()) as { landmarks?: LandmarkPin[] }
+        if (!cancelled) setLandmarkPins(data.landmarks ?? [])
+      } catch {
+        if (!cancelled) setLandmarkPins([])
+      }
+    }
+
+    fetchLandmarks()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedProject])
+
   function makeIcon(count: number) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const L = require('leaflet')
@@ -229,6 +315,18 @@ export default function ProjectMap({ projects, selectedProjectId, onMarkerClick,
         '<div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid #DFE3FF;"></div>' +
       '</div>'
     return new L.DivIcon({ html, className: '', iconSize: [57, 37], iconAnchor: [28, 37], popupAnchor: [0, -40] })
+  }
+
+  function makeLandmarkIcon() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const L = require('leaflet')
+    const html =
+      '<div style="width:30.49px;height:30.49px;display:flex;align-items:center;justify-content:center;">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="30.49" height="30.49" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path fill="#1428AE" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>' +
+      '</svg>' +
+      '</div>'
+    return new L.DivIcon({ html, className: '', iconSize: [30.49, 30.49], iconAnchor: [15.24, 30.49] })
   }
 
   // iconAnchor=[28,37] → pos.y is the pin's bottom tip.
@@ -247,6 +345,7 @@ export default function ProjectMap({ projects, selectedProjectId, onMarkerClick,
           <>
             <FitBoundsOnMount points={markerPoints} />
             <FlyToSelected projects={validProjects} selectedProjectId={selectedProjectId ?? null} />
+            <EnsureLandmarkPane />
             <MarkerPositionTracker selectedProject={selectedProject ?? null} onPosition={onPosition} />
             {validProjects.map((p) => (
               <Marker
@@ -256,12 +355,84 @@ export default function ProjectMap({ projects, selectedProjectId, onMarkerClick,
                 eventHandlers={{ click: () => { if (onMarkerClick) onMarkerClick(p.id) } }}
               />
             ))}
+            {landmarkPins.map((landmark) => (
+              <Marker
+                key={landmark.id}
+                position={[landmark.latitude, landmark.longitude]}
+                icon={makeLandmarkIcon()}
+                pane="landmarkMarkerPane"
+                zIndexOffset={hoveredLandmarkId === landmark.id ? 1000 : 0}
+                eventHandlers={{
+                  mouseover: () => {
+                    cancelLandmarkHide()
+                    setHoveredLandmarkId(landmark.id)
+                  },
+                  mouseout: () => {
+                    scheduleLandmarkHide(landmark.id)
+                  },
+                }}
+              >
+                <Tooltip
+                  direction="top"
+                  offset={[0, -20]}
+                  opacity={1}
+                  pane="landmarkTooltipPane"
+                  interactive
+                  permanent={hoveredLandmarkId === landmark.id}
+                  eventHandlers={{
+                    mouseover: () => {
+                      cancelLandmarkHide()
+                      setHoveredLandmarkId(landmark.id)
+                    },
+                    mouseout: () => {
+                      scheduleLandmarkHide(landmark.id)
+                    },
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '220px',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      background: '#FFFFFF',
+                      boxShadow: '0 8px 24px rgba(0, 33, 67, 0.18)',
+                      fontFamily: 'Outfit, sans-serif',
+                    }}
+                  >
+                    <div style={{ width: '220px', height: '118px', background: '#D9D9D9' }}>
+                      {landmark.imageUrl ? (
+                        <img
+                          src={landmark.imageUrl}
+                          alt={landmark.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280', fontSize: '12px' }}>
+                          No photo available
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ padding: '10px 12px' }}>
+                      <div style={{ fontWeight: 500, fontSize: '14px', lineHeight: '16px', color: '#002143', marginBottom: '4px' }}>
+                        {landmark.name}
+                      </div>
+                      <div style={{ fontWeight: 300, fontSize: '12px', lineHeight: '14px', color: '#4B5563', marginBottom: '6px' }}>
+                        {landmark.category}
+                      </div>
+                      <div style={{ fontWeight: 500, fontSize: '12px', lineHeight: '14px', color: '#1428AE' }}>
+                        {landmark.distanceMiles.toFixed(1)} miles away from this project
+                      </div>
+                    </div>
+                  </div>
+                </Tooltip>
+              </Marker>
+            ))}
           </>
         )}
       </MapContainer>
 
       {/* Popup rendered in normal React DOM, outside Leaflet's container */}
-      {selectedProject && popupPos && (
+      {selectedProject && popupPos && !hoveredLandmarkId && (
         <div
           style={{
             position: 'absolute',
