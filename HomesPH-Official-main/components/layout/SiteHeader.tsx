@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { MapPin, Menu, Search, X } from 'lucide-react'
@@ -24,6 +24,7 @@ import LocationSwitcher from '@/components/home/LocationSwitcher'
 import { useSelectedLocation } from '@/hooks/use-selected-location'
 import { buildContextHomeHref, buildNewsHref } from '@/lib/news-navigation'
 import type { GeneralNavItem } from '@/lib/general-nav'
+import { normalizeLocationSlug } from '@/lib/url-slugs'
 
 interface SocialLinks {
   facebook?: string
@@ -67,6 +68,33 @@ function getLocationContextFromPath(pathname: string) {
   return undefined
 }
 
+function getNavSectionFromPath(pathname: string): 'home' | 'buy' | 'rent' | 'projects' | 'news' | 'contact-us' | null {
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length === 0) return 'home'
+
+  const first = segments[0]
+  const second = segments[1]
+
+  // Location-prefixed routes, e.g. /cebu/buy, /cebu/rent, /cebu/projects, /cebu/news
+  if (!STATIC_ROOT_SEGMENTS.has(first) && second) {
+    if (second === 'buy' || second === 'rent' || second === 'projects' || second === 'news') {
+      return second
+    }
+  }
+
+  if (first === 'buy' || first === 'rent' || first === 'projects' || first === 'news' || first === 'contact-us') {
+    return first
+  }
+
+  // Location landing page, e.g. /cebu
+  if (!STATIC_ROOT_SEGMENTS.has(first) && segments.length === 1) {
+    return 'home'
+  }
+
+  // For non-nav routes (e.g. /developers/slug), keep navbar unhighlighted.
+  return null
+}
+
 export default function SiteHeader({
   logoText = 'HomesPH',
   logoUrl,
@@ -88,12 +116,16 @@ export default function SiteHeader({
   const pathname = usePathname()
   const { selectedLocation, clearSelectedLocation } = useSelectedLocation()
   const locationContext = selectedLocation ?? getLocationContextFromPath(pathname)
+  const locationSlug = normalizeLocationSlug(locationContext)
+  const contextHref = (segment: 'buy' | 'rent' | 'projects') =>
+    locationSlug ? `/${locationSlug}/${segment}` : `/${segment}`
+  const activeSection = getNavSectionFromPath(pathname)
   const logoHref = '/'
   const resolvedNavItems: GeneralNavItem[] = navItems ?? [
     { label: 'Home', href: buildContextHomeHref(locationContext) },
-    { label: 'Buy', href: '/buy' },
-    { label: 'Rent', href: '/rent' },
-    { label: 'Projects', href: '/projects' },
+    { label: 'Buy', href: contextHref('buy') },
+    { label: 'Rent', href: contextHref('rent') },
+    { label: 'Projects', href: contextHref('projects') },
     { label: 'News', href: buildNewsHref(locationContext) },
     { label: 'Contact Us', href: '/contact-us' },
   ]
@@ -156,7 +188,9 @@ export default function SiteHeader({
               <a href={socials.twitter || '#'} target={socials.twitter ? '_blank' : undefined} rel={socials.twitter ? 'noreferrer' : undefined} aria-label="X / Twitter" className="text-white/85 hover:text-white transition-colors">
                 <Image src="/socialIcons/X.png" alt="X / Twitter" width={14} height={14} />
               </a>
-              <LocationSwitcher variant="pill" />
+              <Suspense fallback={<div style={{ width: 101, height: 25 }} aria-hidden /> }>
+                <LocationSwitcher variant="pill" />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -192,10 +226,16 @@ export default function SiteHeader({
               pointerEvents: 'auto'
             }}>
               {(resolvedNavItems || []).map((item) => {
-                const itemPath = item.href.split('?')[0]
-                const isActive = item.label === 'Home'
-                  ? pathname === itemPath
-                  : pathname.startsWith(itemPath)
+                const normalizedLabel = item.label.toLowerCase().replace(/\s+/g, '-')
+                const sectionByLabel =
+                  normalizedLabel === 'home' ? 'home'
+                    : normalizedLabel === 'buy' ? 'buy'
+                      : normalizedLabel === 'rent' ? 'rent'
+                        : normalizedLabel === 'projects' ? 'projects'
+                          : normalizedLabel === 'news' ? 'news'
+                            : normalizedLabel === 'contact-us' ? 'contact-us'
+                              : null
+                const isActive = sectionByLabel ? sectionByLabel === activeSection : false
                 const bgWidth = item.label === 'Contact Us' ? '120px' : (item.label === 'Projects' ? '90px' : '63px')
 
                 return (
@@ -223,7 +263,7 @@ export default function SiteHeader({
                         zIndex: -1,
                         left: '50%',
                         top: '50%',
-                        transform: 'translate(-50%, -55%)',
+                        transform: 'translate(-50%, -50%)',
                         width: bgWidth,
                         height: '36px',
                         backgroundColor: '#FDF8EF',

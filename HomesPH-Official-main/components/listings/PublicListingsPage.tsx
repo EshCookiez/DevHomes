@@ -40,6 +40,7 @@ import PropertyHeader from './PropertyHeader'
 import UnifiedListingCard from './UnifiedListingCard'
 import ListingSidebar from './ListingSidebar'
 import type { RentPHProperty } from './RentPHListingsGrid'
+import { normalizeLocationSlug, toListingSlug } from '@/lib/url-slugs'
 
 interface PublicListingsPageProps {
   mode: ListingSearchMode
@@ -72,6 +73,10 @@ export default async function PublicListingsPage({
   )
 
   const isSale = mode === 'sale'
+  const selectedLocationSlug = normalizeLocationSlug(
+    typeof searchParams.location === 'string' ? searchParams.location : undefined
+  )
+  const modePath = isSale ? 'buy' : 'rent'
 
   // Normalise searchParams to Record<string, string | undefined> for map view
   const viewParam = typeof searchParams.view === 'string'
@@ -452,7 +457,9 @@ export default async function PublicListingsPage({
               <UnifiedListingCard
                 key={listing.id}
                 variant="buy-rent"
-                href={`/listings/${listing.id}`}
+                href={selectedLocationSlug
+                  ? `/${selectedLocationSlug}/${modePath}/${toListingSlug(listing.title, listing.id)}`
+                  : `/listings/${listing.id}`}
                 imageUrl={image || 'https://via.placeholder.com/460x314'}
                 developerLogoUrl={listing.developers_profiles?.logo_url}
                 developerName={listing.developers_profiles?.developer_name}

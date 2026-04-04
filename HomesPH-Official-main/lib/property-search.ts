@@ -2,6 +2,7 @@ import 'server-only'
 
 import { z } from 'zod'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { toListingSlug } from '@/lib/url-slugs'
 
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
 const DEFAULT_OPENAI_MODEL = 'gpt-4.1-mini'
@@ -1808,4 +1809,20 @@ export async function getRecommendedListings(currentId: number, projectId: numbe
     })
   }
   return results
+}
+
+export async function getListingBySlug(
+  listingMode: ListingSearchMode,
+  slug: string,
+  locationSlug?: string | null
+): Promise<PublicListingSearchRecord | null> {
+  const { listings } = await searchPublicListings(
+    listingMode,
+    locationSlug ? { location: locationSlug } : {}
+  )
+
+  const matched = listings.find((listing) => toListingSlug(listing.title, listing.id) === slug)
+  if (!matched) return null
+
+  return getListingById(matched.id)
 }

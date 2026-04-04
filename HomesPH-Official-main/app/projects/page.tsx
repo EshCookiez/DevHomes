@@ -13,6 +13,8 @@ import ViewToggle from '@/components/projects/ViewToggle'
 import PropertyHeader from '@/components/listings/PropertyHeader'
 import ListingSidebar from '@/components/listings/ListingSidebar'
 import React from 'react'
+import { normalizeLocationSlug } from '@/lib/url-slugs'
+import { redirect } from 'next/navigation'
 
 const fmt = (n?: number | null) => n ? `₱ ${Number(n).toLocaleString()}` : null
 const fmtRange = (min?: number | null, max?: number | null) => {
@@ -22,9 +24,20 @@ const fmtRange = (min?: number | null, max?: number | null) => {
 }
 
 export default async function ProjectsPage(
-  props: { searchParams?: Promise<{ q?: string; location?: string; status?: string; type?: string; beds?: string; baths?: string; priceMin?: string; priceMax?: string; areaMin?: string; areaMax?: string; keywords?: string; agent?: string; tourTypes?: string; contract?: string; view?: string; sort?: string }> }
+  props: { searchParams?: Promise<{ q?: string; location?: string; status?: string; type?: string; beds?: string; baths?: string; priceMin?: string; priceMax?: string; areaMin?: string; areaMax?: string; keywords?: string; agent?: string; tourTypes?: string; contract?: string; view?: string; sort?: string; __scoped?: string }> }
 ) {
   const sp = (await props.searchParams) ?? {}
+  const selectedLocationSlug = normalizeLocationSlug(sp.location)
+  if (selectedLocationSlug && sp.__scoped !== '1') {
+    const params = new URLSearchParams()
+    Object.entries(sp).forEach(([key, value]) => {
+      if (!value || key === 'location' || key === '__scoped') return
+      params.set(key, value)
+    })
+    const query = params.toString()
+    redirect(`/${selectedLocationSlug}/projects${query ? `?${query}` : ''}`)
+  }
+  const projectsBasePath = selectedLocationSlug ? `/${selectedLocationSlug}/projects` : '/projects'
   const settings = await getSiteSettings()
 
   const allProjects = await getPublicProjects()
@@ -162,7 +175,7 @@ export default async function ProjectsPage(
   // Helper for generating query strings
   const getHref = (overrides: Record<string, string | undefined>) => {
     const params = new URLSearchParams()
-    Object.entries(sp).forEach(([k, v]) => { if (v) params.set(k, v) })
+    Object.entries(sp).forEach(([k, v]) => { if (k !== '__scoped' && v) params.set(k, v) })
     Object.entries(overrides).forEach(([k, v]) => {
       if (v === undefined) params.delete(k)
       else params.set(k, v)
@@ -195,7 +208,7 @@ export default async function ProjectsPage(
         {(sp.view === 'map' || (Array.isArray(sp.view) && sp.view.includes('map'))) ? (
           <ProjectMapView
             projects={projects}
-            searchParams={Object.fromEntries(Object.entries(sp).filter(([_, v]) => v !== undefined)) as Record<string, string>}
+            searchParams={Object.fromEntries(Object.entries(sp).filter(([k, v]) => k !== '__scoped' && v !== undefined)) as Record<string, string>}
           />
         ) : (
           /* ── Main Content Area (Standard List View) ── */
@@ -205,7 +218,7 @@ export default async function ProjectsPage(
               <div className="w-full max-w-[1326px]" style={{ marginBottom: '20px' }}>
                 <PropertyHeader
                   breadcrumbPrefix="For Sale:"
-                  breadcrumbLinkHref="/projects"
+                  breadcrumbLinkHref={projectsBasePath}
                   title="Projects for sale in Philippines"
                   topLocations={topLocations.map(([loc, count]) => ({
                     name: loc,
@@ -247,7 +260,7 @@ export default async function ProjectsPage(
                     <UnifiedListingCard
                       key={p.id}
                       variant="projects"
-                      href={`/projects/${p.slug}`}
+                      href={selectedLocationSlug ? `/${selectedLocationSlug}/projects/${p.slug}` : `/projects/${p.slug}`}
                       imageUrl={p.main_image_url ?? `https://picsum.photos/seed/${p.slug}/900/600`}
                       developerLogoUrl={p.developers_profiles?.logo_url ?? undefined}
                       developerName={p.developers_profiles?.developer_name}
@@ -271,7 +284,7 @@ export default async function ProjectsPage(
                     We couldn't find any projects matching your current filters. Try adjusting your search criteria or clearing all filters.
                   </p>
                   <Link 
-                    href="/projects" 
+                    href={projectsBasePath}
                     className="h-[55px] px-10 flex items-center justify-center bg-[#1428AE] text-white rounded-[10px] font-medium text-[18px] hover:bg-[#001392] transition-all shadow-md hover:shadow-lg font-outfit"
                   >
                     Clear All Filters

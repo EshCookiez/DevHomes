@@ -95,9 +95,9 @@ export default async function LocationPage({ params }: LocationPageProps) {
   }
 
   const heroQuickLinks = [
-    { label: 'Buy', href: `/buy?location=${locationSlug}` },
-    { label: 'Rent', href: `/rent?location=${locationSlug}` },
-    { label: 'Projects', href: `/projects?location=${locationSlug}` },
+    { label: 'Buy', href: `/${locationSlug}/buy` },
+    { label: 'Rent', href: `/${locationSlug}/rent` },
+    { label: 'Projects', href: `/${locationSlug}/projects` },
     { label: 'Developers', href: '/developers' },
   ]
   return (

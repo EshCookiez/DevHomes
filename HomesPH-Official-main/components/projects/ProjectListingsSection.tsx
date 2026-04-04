@@ -30,6 +30,7 @@ interface ProjectListingsSectionProps {
 }
 
 import UnifiedListingCard from '@/components/listings/UnifiedListingCard'
+import { normalizeLocationSlug, toListingSlug } from '@/lib/url-slugs'
 
 export default function ProjectListingsSection({ project, projectListings, saleListings, rentListings, initialView = 'list' }: ProjectListingsSectionProps) {
   const router = useRouter()
@@ -115,6 +116,8 @@ export default function ProjectListingsSection({ project, projectListings, saleL
     return list // Popular/default
   }, [projectListings, sort])
 
+  const projectLocationSlug = normalizeLocationSlug(project.city_municipality || project.province || '')
+
   const setView = (newView: 'list' | 'map') => {
     const params = new URLSearchParams(searchParams.toString())
     if (newView === 'list') {
@@ -198,7 +201,9 @@ export default function ProjectListingsSection({ project, projectListings, saleL
           <UnifiedListingCard
             key={l.id}
             variant="buy-rent"
-            href={`/listings/${l.id}`}
+            href={projectLocationSlug
+              ? `/${projectLocationSlug}/${l.listing_type === 'rent' ? 'rent' : 'buy'}/${toListingSlug(l.title, l.id)}`
+              : `/listings/${l.id}`}
             imageUrl={l.property_listing_galleries?.[0]?.image_url || '/properties/placeholder.jpg'}
             price={Number(l.selling_price || l.price || 0)}
             propertyType={l.project_units?.unit_type || l.property_type || 'Residential'}
