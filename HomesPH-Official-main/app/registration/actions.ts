@@ -18,6 +18,8 @@ interface BaseRegistrationInput {
   phone: string
   password: string
   affiliateCode?: string | null
+  source?: string | null
+  campaign?: string | null
 }
 
 interface FranchiseRegistrationInput extends BaseRegistrationInput {
@@ -237,6 +239,43 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
     
     if (refCode) {
       referredById = refCode.user_profile_id
+
+      // 1. Increment the main referral_codes table for tracking Overall Successful Referrals
+      const { error: totalError } = await admin.rpc('increment_referral_registration_total', { 
+        p_code: input.affiliateCode.toUpperCase() 
+      })
+      if (totalError) console.error('Error incrementing total registrations:', totalError)
+
+      // 2. Track Campaign Registration if provided
+      if (input.campaign) {
+        let finalSource = input.source;
+        if (!finalSource) {
+          // If source is missing from URL, we look up what source this campaign belongs to
+          const { data: campaignRecord } = await admin
+            .from('referral_source_metrics')
+            .select('source_name')
+            .eq('ambassador_id', referredById)
+            .eq('campaign_name', input.campaign)
+            .order('created_at', { ascending: false }) // Get the most recent one if duplicates exist
+            .limit(1)
+            .maybeSingle();
+          
+          if (campaignRecord) {
+            finalSource = campaignRecord.source_name;
+          } else {
+            // If No record found, we still want it to go to 'Campaign' or 'Other'
+            finalSource = 'Campaign'; 
+          }
+        }
+
+        const { error: rpcError } = await admin.rpc('increment_referral_registration', {
+          p_ambassador_id: referredById,
+          p_code: input.affiliateCode.toUpperCase(),
+          p_source: finalSource,
+          p_campaign: input.campaign
+        })
+        if (rpcError) console.error('RPC Error (Registration):', rpcError);
+      }
     }
   }
 

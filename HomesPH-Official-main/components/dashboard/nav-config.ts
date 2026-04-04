@@ -194,18 +194,13 @@ export const NAV_CONFIG: Record<string, NavGroup[]> = {
     {
       title: 'Referrals',
       items: [
-        { label: 'My Referrals',   href: '/dashboard/ambassador/referrals',   icon: UserPlus   },
         { label: 'Links & Codes',  href: '/dashboard/ambassador/links',       icon: Link2      },
-        { label: 'Marketing Tools',href: '/dashboard/ambassador/marketing',   icon: Image      },
-        { label: 'Projects',       href: '/dashboard/ambassador/projects',    icon: FolderOpen },
-        { label: 'Performance',    href: '/dashboard/ambassador/performance', icon: BarChart3  },
       ],
     },
     {
       title: 'Account',
       items: [
         { label: 'Profile',        href: '/dashboard/profile',                icon: Users      },
-        { label: 'Settings',       href: '/dashboard/ambassador/settings',    icon: Settings   },
       ],
     },
   ],

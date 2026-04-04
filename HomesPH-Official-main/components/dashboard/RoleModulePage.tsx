@@ -1,5 +1,6 @@
  'use client'
 
+import { useRouter } from 'next/navigation'
 import { Eye, Lock, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Column } from '@/components/dashboard/DataTable'
@@ -107,16 +108,10 @@ function getDefinition(moduleKey: DashboardModuleKey, label: string): ModuleDefi
       tableTitle: 'Saved Projects', columns: [{ key: 'project', label: 'Project' }, { key: 'location', label: 'Location' }, statusColumn], rows: [{ project: 'Azure Sky Residences', location: 'Cebu', status: 'Shortlisted' }, { project: 'BGC Tower 2', location: 'Taguig', status: 'Researching' }], activity: baseActivity('Saved project reviewed'),
     },
     'referral-leads': {
-      title: label, description: 'Track lead flow generated through your ambassador referral programs.', createLabel: 'Add Referral Lead',
-      metrics: [{ title: 'Referral Leads', value: 24, tone: 'blue' }, { title: 'Converted', value: 8, tone: 'emerald' }, { title: 'Pending', value: 6, tone: 'amber' }],
-      chart: { title: 'Referral Pipeline', subtitle: 'Referral leads generated this period', data: [{ name: 'Oct', value: 4 }, { name: 'Nov', value: 6 }, { name: 'Dec', value: 8 }, { name: 'Jan', value: 11 }, { name: 'Feb', value: 24 }], color: '#ec4899', type: 'area' },
-      tableTitle: 'Referral Leads', columns: [{ key: 'lead', label: 'Lead' }, { key: 'project', label: 'Project' }, { key: 'commission', label: 'Commission' }, statusColumn], rows: [{ lead: 'Rose Tan', project: 'BGC Tower 2', commission: 'Pending', status: 'Negotiation' }, { lead: 'Ben Uy', project: 'Azure Sky', commission: '₱28,500', status: 'Closed Won' }], activity: baseActivity('Referral lead updated'),
-    },
-    referrals: {
-      title: label, description: 'Manage active referrals, track conversions, and review commission outcomes.', createLabel: 'Create Referral Link',
-      metrics: [{ title: 'Active Referrals', value: 9, tone: 'blue' }, { title: 'Won Deals', value: 3, tone: 'emerald' }, { title: 'Pending Payout', value: 2, tone: 'amber' }],
-      chart: { title: 'Referral Conversions', subtitle: 'Converted referrals in the last five months', data: [{ name: 'Oct', value: 1 }, { name: 'Nov', value: 2 }, { name: 'Dec', value: 2 }, { name: 'Jan', value: 3 }, { name: 'Feb', value: 3 }], color: '#8b5cf6', type: 'bar' },
-      tableTitle: 'Referral Directory', columns: [{ key: 'referral', label: 'Referral' }, { key: 'project', label: 'Project' }, { key: 'earnings', label: 'Earnings' }, statusColumn], rows: [{ referral: 'Marco Santos', project: 'Azure Sky', earnings: '₱42,000', status: 'Closed Won' }, { referral: 'Celine Go', project: 'Pampanga Greens', earnings: 'Pending', status: 'New' }], activity: baseActivity('Referral commission processed'),
+      title: 'Links & Custom Codes', description: 'Manage your referral links and track how your vanity codes are performing offline and online.', createLabel: 'New Code',
+      metrics: [{ title: 'Total Clicks', value: '1.2k', tone: 'blue' }, { title: 'Registrations', value: 24, tone: 'emerald' }, { title: 'Active Codes', value: 3, tone: 'amber' }],
+      chart: { title: 'Link Performance', subtitle: 'Clicks generated across all shared links', data: [{ name: 'Oct', value: 450 }, { name: 'Nov', value: 620 }, { name: 'Dec', value: 890 }, { name: 'Jan', value: 1100 }, { name: 'Feb', value: 1240 }], color: '#1428ae', type: 'area' },
+      tableTitle: 'Your Vanity Codes', columns: [{ key: 'code', label: 'Code' }, { key: 'clicks', label: 'Clicks' }, statusColumn], rows: [{ code: 'SUMMER24', clicks: 450, status: 'Active' }, { code: 'HOMESVIP', clicks: 790, status: 'Active' }], activity: baseActivity('Referral link performance analyzed'),
     },
     'property-types': {
       title: label, description: 'Role-based access to property type taxonomy.', createLabel: 'Create Property Type',
@@ -182,6 +177,7 @@ function toneIcon(tone: 'blue' | 'emerald' | 'amber'): LucideIcon {
 }
 
 export default function RoleModulePage({ role, moduleKey, label }: { role: string; moduleKey: DashboardModuleKey; label: string }) {
+  const router = useRouter()
   const user = useDashboardUser()
   const moduleDefinition = getDefinition(moduleKey, label)
   const actions = user.dashboardPermissions[moduleKey] ?? { view: false, create: false, edit: false, delete: false, manage: false }
@@ -203,7 +199,7 @@ export default function RoleModulePage({ role, moduleKey, label }: { role: strin
           </div>
           <p className="text-sm text-slate-500 mt-1">{moduleDefinition.description}</p>
         </div>
-        <Button
+         <Button
           type="button"
           disabled={!canCreate}
           className="gap-2 rounded-xl bg-[#1428ae] hover:bg-[#0f1f8a] disabled:bg-slate-200 disabled:text-slate-500"
@@ -212,7 +208,7 @@ export default function RoleModulePage({ role, moduleKey, label }: { role: strin
           {moduleDefinition.createLabel}
         </Button>
       </div>
-
+ 
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold text-slate-900">Access Summary</CardTitle>

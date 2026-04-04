@@ -46,7 +46,6 @@ export type DashboardModuleKey =
   | 'saved-listings'
   | 'saved-projects'
   | 'referral-leads'
-  | 'referrals'
   | 'units'
 
 export interface NavItem {
@@ -167,10 +166,10 @@ const ROLE_DASHBOARD_CONFIG: Record<string, RoleDashboardConfig> = {
     ...ROLE_META.ambassador,
     navGroups: [
       { items: [{ label: 'Dashboard', href: '/dashboard/ambassador', icon: LayoutDashboard }] },
-      { title: 'Referrals', items: [{ label: 'Referral Leads', href: '/dashboard/ambassador/referral-leads', icon: UserPlus, moduleKey: 'referral-leads' }, { label: 'My Referrals', href: '/dashboard/ambassador/referrals', icon: Link2, moduleKey: 'referrals' }, { label: 'Links & Codes', href: '/dashboard/ambassador/links', icon: Link2 }, { label: 'Marketing Tools', href: '/dashboard/ambassador/marketing', icon: Image }, { label: 'Reports', href: '/dashboard/ambassador/reports', icon: BarChart3, moduleKey: 'reports' }] },
-      { title: 'Account', items: [{ label: 'Profile', href: '/dashboard/profile', icon: Users }, { label: 'Settings', href: '/dashboard/ambassador/settings', icon: Settings }] },
+      { title: 'Referrals', items: [{ label: 'Links & Codes', href: '/dashboard/ambassador/links', icon: Link2 }] },
+      { title: 'Account', items: [{ label: 'Profile', href: '/dashboard/profile', icon: Users }] },
     ],
-    permissions: { projects: 'view', listings: 'view', 'referral-leads': 'manage-own', referrals: 'manage-own', reports: 'view' },
+    permissions: { projects: 'view', listings: 'view', 'referral-leads': 'view', reports: 'view' },
   },
   developer: {
     ...ROLE_META.developer,
@@ -296,7 +295,6 @@ export const DASHBOARD_MODULE_ACTION_SUPPORT: Record<DashboardModuleKey, Dashboa
   'saved-listings': { view: true, create: false, edit: false, delete: false, manage: false },
   'saved-projects': { view: true, create: false, edit: false, delete: false, manage: false },
   'referral-leads': { view: true, create: false, edit: false, delete: false, manage: false },
-  referrals: { view: true, create: false, edit: false, delete: false, manage: false },
   units: { view: true, create: true, edit: true, delete: true, manage: false },
 }
 
