@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import RegistrationForm from '@/components/auth/RegistrationForm'
 import RegistrationPageShell from '@/components/auth/RegistrationPageShell'
 import type { RegistrationRole } from '@/app/registration/actions'
@@ -137,11 +138,19 @@ export default async function JoinPage({ params }: JoinPageProps) {
   return (
     <RegistrationPageShell>
       {invitation && isPending && !isExpired ? (
-        <RegistrationForm
-          invitationToken={resolvedParams.token}
-          initialRole={safeRole}
-          invitedEmail={invitation.email}
-        />
+        <Suspense
+          fallback={
+            <div className="flex h-96 w-full max-w-lg items-center justify-center rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+              Loading registration...
+            </div>
+          }
+        >
+          <RegistrationForm
+            invitationToken={resolvedParams.token}
+            initialRole={safeRole}
+            invitedEmail={invitation.email}
+          />
+        </Suspense>
       ) : invitation?.status === 'accepted' && existingProfile ? (
         <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">
