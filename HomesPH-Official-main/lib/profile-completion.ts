@@ -5,9 +5,7 @@ export function getProfileCompletionStatus(profile: Pick<UserProfileRecord, 'fna
 
   if (!profile.fname?.trim()) missingFields.push('First name')
   if (!profile.lname?.trim()) missingFields.push('Last name')
-  if (!profile.profile_image_url?.trim()) missingFields.push('Profile photo')
   if (!contact.primary_mobile?.trim()) missingFields.push('Primary mobile')
-  if (!profile.birthday) missingFields.push('Birthday')
 
   return {
     isComplete: missingFields.length === 0,

@@ -2,6 +2,7 @@ import {
   isMissingAccountStateColumnError,
   withNormalizedAccountState,
 } from '@/lib/account-status'
+import { withNormalizedPrcState } from '@/lib/prc-status'
 
 interface QueryErrorLike {
   code?: string
@@ -32,7 +33,7 @@ export async function getUserProfileWithAccountStateFallback<T extends object>({
 
   if (!isMissingAccountStateColumnError(primary.error)) {
     return {
-      data: primary.data ? withNormalizedAccountState(primary.data as any) : null,
+      data: primary.data ? withNormalizedPrcState(withNormalizedAccountState(primary.data as any)) : null,
       error: primary.error,
     }
   }
@@ -44,7 +45,7 @@ export async function getUserProfileWithAccountStateFallback<T extends object>({
     .maybeSingle() as SupabaseQueryResult<T>
 
   return {
-    data: fallback.data ? withNormalizedAccountState(fallback.data as any) : null,
+    data: fallback.data ? withNormalizedPrcState(withNormalizedAccountState(fallback.data as any)) : null,
     error: fallback.error,
   }
 }

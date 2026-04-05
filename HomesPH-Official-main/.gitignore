@@ -11,5 +11,7 @@ node_modules/
 .DS_Store
 guidelines/
 app/template
-tsconfig.tsbuildinfo
+*.tsbuildinfo
+.codex*.png
 .package-lock.json
+docs-and-migrations/

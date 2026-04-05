@@ -40,7 +40,7 @@ function toneClasses(tone: 'blue' | 'emerald' | 'amber') {
 function getDefinition(moduleKey: DashboardModuleKey, label: string): ModuleDefinition {
   const statusColumn = { key: 'status', label: 'Status', render: (value: TableRow[keyof TableRow]) => <StatusBadge status={String(value)} /> }
 
-  const definitions: Record<DashboardModuleKey, ModuleDefinition> = {
+  const definitions: Partial<Record<DashboardModuleKey, ModuleDefinition>> = {
     users: {
       title: label, description: 'Role-controlled access for user management surfaces.', createLabel: 'Create User',
       metrics: [{ title: 'Visible Users', value: 84, tone: 'blue' }, { title: 'Editable', value: 22, tone: 'emerald' }, { title: 'Restricted', value: 62, tone: 'amber' }],
@@ -155,9 +155,35 @@ function getDefinition(moduleKey: DashboardModuleKey, label: string): ModuleDefi
       chart: { title: 'Salesperson Conversions', subtitle: 'Closed deals by team member', data: [{ name: 'Ana', value: 12 }, { name: 'Marco', value: 8 }, { name: 'Rosa', value: 14 }, { name: 'Ben', value: 9 }, { name: 'Luis', value: 6 }], color: '#7c3aed', type: 'bar' },
       tableTitle: 'Salespersons', columns: [{ key: 'salesperson', label: 'Salesperson' }, { key: 'conversions', label: 'Conversions' }, statusColumn], rows: [{ salesperson: 'Ana Garcia', conversions: 12, status: 'Active' }, { salesperson: 'Ben Cruz', conversions: 9, status: 'Active' }], activity: baseActivity('Salesperson quota refreshed'),
     },
+    suboffices: {
+      title: label, description: 'Track branch offices, assigned secretaries, and organization coverage.', createLabel: 'Create Suboffice',
+      metrics: [{ title: 'Suboffices', value: 3, tone: 'blue' }, { title: 'Assigned', value: 2, tone: 'emerald' }, { title: 'Needs Setup', value: 1, tone: 'amber' }],
+      chart: { title: 'Branch Coverage', subtitle: 'Connected suboffices visible in this dashboard scope', data: [{ name: 'North', value: 4 }, { name: 'Central', value: 6 }, { name: 'South', value: 3 }], color: '#0f766e', type: 'bar' },
+      tableTitle: 'Suboffices', columns: [{ key: 'office', label: 'Office' }, { key: 'secretary', label: 'Secretary' }, statusColumn], rows: [{ office: 'Cebu North Branch', secretary: 'Ana Garcia', status: 'Configured' }, { office: 'Davao South Branch', secretary: 'Unassigned', status: 'Pending' }], activity: baseActivity('Suboffice directory refreshed'),
+    },
   }
 
-  return definitions[moduleKey]
+  return definitions[moduleKey] ?? {
+    title: label,
+    description: 'This dashboard module is visible in your role scope.',
+    createLabel: `Open ${label}`,
+    metrics: [
+      { title: 'Visible Records', value: 0, tone: 'blue' },
+      { title: 'Active', value: 0, tone: 'emerald' },
+      { title: 'Needs Review', value: 0, tone: 'amber' },
+    ],
+    chart: {
+      title: `${label} Activity`,
+      subtitle: 'No scoped activity data is available for this module yet.',
+      data: [{ name: 'Now', value: 0 }],
+      color: '#2563eb',
+      type: 'bar',
+    },
+    tableTitle: label,
+    columns: [{ key: 'name', label: 'Name' }, statusColumn],
+    rows: [],
+    activity: baseActivity('Scoped dashboard visibility applied'),
+  }
 }
 
 function baseActivity(message: string): ActivityItem[] {

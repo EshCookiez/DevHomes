@@ -1,130 +1,131 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { sendAccountReviewNotification } from '@/lib/email/account-review-notifications'
 import {
   approveManagedUser,
   createManagedUser,
   deleteManagedUser,
   rejectManagedUser,
+  rejectManagedUserPrc,
   resetManagedUserPassword,
   setManagedUserActive,
   updateManagedUser,
   updateManagedUserRole,
+  verifyManagedUserPrc,
 } from '@/lib/users-admin'
-import type { CreateManagedUserInput, ManagedUserProfileInput, ManagedUserRecord } from '@/lib/users-types'
+import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import type { CreateManagedUserInput, ManagedUserProfileInput } from '@/lib/users-types'
 
-interface ActionResult<T = undefined> {
-  success: boolean
-  message: string
-  data?: T
-}
+// ─── Original user management actions ─────────────────────────────────────────
 
-function revalidateUsersSurface() {
-  revalidatePath('/dashboard/users')
-  revalidatePath('/dashboard/developers')
-}
-
-function appendNotificationWarning(message: string, warning?: string) {
-  return warning ? `${message} ${warning}` : message
-}
-
-export async function createUserAction(input: CreateManagedUserInput): Promise<ActionResult<ManagedUserRecord>> {
+export async function createUserAction(input: CreateManagedUserInput) {
   try {
     const data = await createManagedUser(input)
-    revalidateUsersSurface()
     return { success: true, message: 'User created successfully.', data }
   } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to create user.' }
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to create user.', data: null }
   }
 }
 
-export async function updateUserAction(profileId: string, input: ManagedUserProfileInput): Promise<ActionResult<ManagedUserRecord>> {
-  try {
-    const data = await updateManagedUser(profileId, input)
-    revalidateUsersSurface()
-    return { success: true, message: 'User updated.', data }
-  } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to update user.' }
-  }
-}
-
-export async function changeUserRoleAction(profileId: string, role: string): Promise<ActionResult<ManagedUserRecord>> {
-  try {
-    const data = await updateManagedUserRole(profileId, role)
-    revalidateUsersSurface()
-    return { success: true, message: 'Role updated.', data }
-  } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to update role.' }
-  }
-}
-
-export async function setUserStatusAction(profileId: string, isActive: boolean): Promise<ActionResult<ManagedUserRecord>> {
-  try {
-    const data = await setManagedUserActive(profileId, isActive)
-    revalidateUsersSurface()
-    return { success: true, message: isActive ? 'User activated.' : 'User deactivated.', data }
-  } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to update user status.' }
-  }
-}
-
-export async function approveUserAction(profileId: string): Promise<ActionResult<ManagedUserRecord>> {
+export async function approveUserAction(profileId: string) {
   try {
     const data = await approveManagedUser(profileId)
-    const notification = await sendAccountReviewNotification({
-      email: data.email,
-      fullName: data.full_name ?? data.email,
-      decision: 'approved',
-    })
-
-    revalidateUsersSurface()
-    return {
-      success: true,
-      message: appendNotificationWarning('User approved.', notification.sent ? undefined : notification.message),
-      data,
-    }
+    return { success: true, message: 'User approved successfully.', data }
   } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to approve user.' }
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to approve user.', data: null }
   }
 }
 
-export async function rejectUserAction(profileId: string, rejectionReason: string): Promise<ActionResult<ManagedUserRecord>> {
+export async function rejectUserAction(profileId: string, rejectionReason: string) {
   try {
     const data = await rejectManagedUser(profileId, rejectionReason)
-    const notification = await sendAccountReviewNotification({
-      email: data.email,
-      fullName: data.full_name ?? data.email,
-      decision: 'rejected',
-      rejectionReason,
-    })
-
-    revalidateUsersSurface()
-    return {
-      success: true,
-      message: appendNotificationWarning('User rejected.', notification.sent ? undefined : notification.message),
-      data,
-    }
+    return { success: true, message: 'User rejected.', data }
   } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to reject user.' }
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to reject user.', data: null }
   }
 }
 
-export async function resetUserPasswordAction(userId: string, password: string): Promise<ActionResult> {
+export async function verifyUserPrcAction(profileId: string) {
+  try {
+    const data = await verifyManagedUserPrc(profileId)
+    return { success: true, message: 'PRC verified.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to verify PRC.', data: null }
+  }
+}
+
+export async function rejectUserPrcAction(profileId: string, rejectionReason: string) {
+  try {
+    const data = await rejectManagedUserPrc(profileId, rejectionReason)
+    return { success: true, message: 'PRC rejected.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to reject PRC.', data: null }
+  }
+}
+
+export async function setUserStatusAction(profileId: string, isActive: boolean) {
+  try {
+    const data = await setManagedUserActive(profileId, isActive)
+    return { success: true, message: isActive ? 'User activated.' : 'User deactivated.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to update status.', data: null }
+  }
+}
+
+export async function updateUserAction(profileId: string, input: ManagedUserProfileInput) {
+  try {
+    const data = await updateManagedUser(profileId, input)
+    return { success: true, message: 'User updated.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to update user.', data: null }
+  }
+}
+
+export async function updateUserRoleAction(profileId: string, role: string) {
+  try {
+    const data = await updateManagedUserRole(profileId, role)
+    return { success: true, message: 'Role updated.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to update role.', data: null }
+  }
+}
+
+// Alias used by user-role-modal.tsx
+export const changeUserRoleAction = updateUserRoleAction
+
+export async function resetUserPasswordAction(userId: string, password: string) {
   try {
     await resetManagedUserPassword(userId, password)
     return { success: true, message: 'Password reset successfully.' }
   } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to reset password.' }
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to reset password.' }
   }
 }
 
-export async function deleteUserAction(userId: string): Promise<ActionResult<{ userId: string }>> {
+export async function deleteUserAction(userId: string) {
   try {
     await deleteManagedUser(userId)
-    revalidateUsersSurface()
-    return { success: true, message: 'User deleted successfully.', data: { userId } }
+    return { success: true, message: 'User deleted.' }
   } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'Unable to delete user.' }
+    return { success: false, message: error instanceof Error ? error.message : 'Failed to delete user.' }
   }
+}
+
+// ─── Document fetch (admin-privileged, bypasses RLS) ─────────────────────────
+
+export async function getUserDocumentUrl(userProfileId: string): Promise<string | null> {
+  const admin = createAdminSupabaseClient()
+  const { data, error } = await admin
+    .from('user_documents')
+    .select('file_url')
+    .eq('user_profile_id', userProfileId)
+    .eq('document_type', 'valid_id')
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Failed to fetch user document:', error.message)
+    return null
+  }
+
+  return (data as { file_url: string } | null)?.file_url ?? null
 }

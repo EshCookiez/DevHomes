@@ -61,7 +61,7 @@ export default function ProfileSettingsClient({
             </div>
             <form action={skipProfileCompletionAction}>
               <Button type="submit" variant="outline" className="rounded-xl border-amber-300 bg-white text-amber-900 hover:bg-amber-100">
-                Skip Once
+                Skip For Now
               </Button>
             </form>
           </CardContent>

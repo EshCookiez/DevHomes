@@ -6,9 +6,12 @@ export interface DashboardUser {
   email: string
   fullName: string
   profileImageUrl: string | null
+  appRole: string
+  organizationRole: string | null
   role: string
   roleSegment: string
   profileComplete: boolean
+  profileCompletionSkipped: boolean
   missingProfileFields: string[]
   unreadInquiryCount: number
   dashboardPermissions: DashboardPermissionMap

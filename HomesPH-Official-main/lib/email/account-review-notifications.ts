@@ -6,6 +6,7 @@ interface AccountReviewNotificationInput {
   email: string
   fullName: string
   decision: 'approved' | 'rejected'
+  prcStatusNote?: string | null
   rejectionReason?: string | null
 }
 
@@ -16,15 +17,32 @@ interface AccountReviewNotificationResult {
 
 let cachedTransporter: nodemailer.Transporter | null | undefined
 
-function getTransporter() {
+export function getMailFromValue() {
+  const address =
+    process.env.SMTP_FROM ||
+    process.env.MAIL_FROM ||
+    process.env.MAIL_FROM_ADDRESS ||
+    process.env.SMTP_USER ||
+    process.env.MAIL_USERNAME ||
+    'no-reply@homes.ph'
+  const fromName = process.env.MAIL_FROM_NAME || 'HomesPH'
+
+  if (address.includes('<') || !fromName.trim()) {
+    return address
+  }
+
+  return `"${fromName}" <${address}>`
+}
+
+export function getTransporter() {
   if (cachedTransporter !== undefined) {
     return cachedTransporter
   }
 
-  const host = process.env.SMTP_HOST
-  const port = Number(process.env.SMTP_PORT ?? '587')
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
+  const host = process.env.SMTP_HOST || process.env.MAIL_HOST
+  const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || '587')
+  const user = process.env.SMTP_USER || process.env.MAIL_USERNAME
+  const pass = process.env.SMTP_PASS || process.env.MAIL_PASSWORD
 
   if (!host || !user || !pass || !Number.isFinite(port)) {
     cachedTransporter = null
@@ -50,18 +68,21 @@ function buildEmailCopy(input: AccountReviewNotificationInput) {
   const greetingName = input.fullName.trim() || 'there'
 
   if (input.decision === 'approved') {
+    const prcStatusNote = input.prcStatusNote?.trim()
     return {
       subject: 'Your HomesPH account has been approved',
       text: [
         `Hi ${greetingName},`,
         '',
         'Your HomesPH account has been approved. You can now sign in to your dashboard.',
+        prcStatusNote || null,
         '',
         `Sign in here: ${loginUrl}`,
       ].join('\n'),
       html: `
         <p>Hi ${greetingName},</p>
         <p>Your HomesPH account has been approved. You can now sign in to your dashboard.</p>
+        ${prcStatusNote ? `<p>${prcStatusNote}</p>` : ''}
         <p><a href="${loginUrl}">Sign in to HomesPH</a></p>
       `,
     }
@@ -101,7 +122,7 @@ export async function sendAccountReviewNotification(
   }
 
   try {
-    const from = process.env.SMTP_FROM ?? process.env.MAIL_FROM ?? process.env.SMTP_USER ?? 'no-reply@homes.ph'
+    const from = getMailFromValue()
     const { subject, text, html } = buildEmailCopy(input)
 
     await transporter.sendMail({

@@ -1,8 +1,10 @@
 'use server'
 
 import {
+  ACCOUNT_STATUS_PENDING_APPROVAL,
   canAccessDashboardAccount,
   getInactiveAccountMessage,
+  normalizeAccountStatus,
 } from '@/lib/account-status'
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
@@ -66,6 +68,14 @@ export async function loginAction(_: LoginFormState, formData: FormData): Promis
   if (profileError) {
     await supabase.auth.signOut()
     return { error: PROFILE_LOOKUP_FAILED }
+  }
+
+  if (
+    profile &&
+    normalizeAccountStatus(profile.account_status, profile.is_active) === ACCOUNT_STATUS_PENDING_APPROVAL &&
+    profile.rejection_reason?.trim()
+  ) {
+    redirect('/account/correction')
   }
 
   if (profile && !canAccessDashboardAccount(profile)) {

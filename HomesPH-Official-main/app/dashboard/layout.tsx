@@ -3,6 +3,7 @@ import { getCurrentDashboardUser } from '@/lib/auth/user'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { cookies } from 'next/headers'
+import { isRouteRoleSegment } from '@/lib/auth/roles'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentDashboardUser()
@@ -15,13 +16,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const requestedRoleSegment = headerStore.get('x-dashboard-role-segment')
   const requestedPageSegment = headerStore.get('x-dashboard-page-segment')
   const cookieStore = await cookies()
-  const skipProfileCompletion = cookieStore.get('profile-completion-skip')?.value === '1'
+  const skipProfileCompletion =
+    cookieStore.get('profile-completion-skip')?.value === '1' || user.profileCompletionSkipped
+  const isProfileRoute = requestedRoleSegment === 'profile' || requestedPageSegment === 'profile'
 
-  if (requestedRoleSegment && requestedRoleSegment !== user.roleSegment) {
+  if (requestedRoleSegment && 
+      isRouteRoleSegment(requestedRoleSegment) && 
+      requestedRoleSegment !== user.roleSegment) {
     redirect(`/dashboard/${user.roleSegment}`)
   }
 
-  if (!user.profileComplete && requestedPageSegment && requestedPageSegment !== 'profile' && !skipProfileCompletion) {
+  if (!user.profileComplete && !skipProfileCompletion && !isProfileRoute) {
     redirect('/dashboard/profile?profileRequired=1')
   }
 

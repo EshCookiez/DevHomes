@@ -50,7 +50,7 @@ export default function OtpVerifyStep({ email }: Props) {
           </p>
           <p className="text-sm font-bold text-[#0c1f4a] mt-1">{email}</p>
           <p className="text-sm text-gray-500 mt-3 leading-relaxed">
-            After you verify your email, your account will stay pending until an administrator approves your registration.
+            After you verify your email, your account will stay pending until the reviewing team completes the final approval.
           </p>
         </div>
 

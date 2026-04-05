@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3,
   Building,
+  Building2,
   ClipboardList,
   FileText,
   FolderOpen,
@@ -19,6 +20,7 @@ import {
   Target,
   UserPlus,
   Users,
+  Activity,
 } from 'lucide-react'
 
 export type DashboardPermissionLevel = 'view' | 'create' | 'edit' | 'delete' | 'manage' | 'manage-own'
@@ -47,6 +49,7 @@ export type DashboardModuleKey =
   | 'saved-projects'
   | 'referral-leads'
   | 'units'
+  | 'suboffices'
 
 export interface NavItem {
   label: string
@@ -84,9 +87,45 @@ export const ROLE_META: Record<string, { label: string; badge: string }> = {
   developer: { label: 'Developer', badge: 'bg-orange-500' },
   agent: { label: 'Agent', badge: 'bg-lime-500' },
   'bank-manager': { label: 'Bank Manager', badge: 'bg-teal-500' },
+  secretary: { label: 'Operations', badge: 'bg-indigo-500' },
 }
 
 const ROLE_DASHBOARD_CONFIG: Record<string, RoleDashboardConfig> = {
+  secretary: {
+    ...ROLE_META.secretary,
+    navGroups: [
+      { items: [{ label: 'Dashboard', href: '/dashboard/secretary', icon: LayoutDashboard }] },
+      {
+        title: 'Operations',
+        items: [
+          { label: 'Applications', href: '/dashboard/secretary/applications', icon: ClipboardList, moduleKey: 'team' },
+          { label: 'Member Records', href: '/dashboard/secretary/members', icon: Users, moduleKey: 'team' },
+          { label: 'Leads', href: '/dashboard/secretary/leads', icon: Target, moduleKey: 'leads' },
+          { label: 'Inquiries', href: '/dashboard/secretary/inquiries', icon: MessageSquare, moduleKey: 'inquiries' },
+          { label: 'Invitations', href: '/dashboard/secretary/invitations', icon: Link2 },
+          { label: 'Office Details', href: '/dashboard/secretary/office', icon: Building2, moduleKey: 'suboffices' },
+        ],
+      },
+      {
+        title: 'Records',
+        items: [
+          { label: 'Documents', href: '/dashboard/secretary/documents', icon: FileText },
+          { label: 'Activity Logs', href: '/dashboard/activity-logs', icon: Activity, moduleKey: 'activity-logs' },
+        ],
+      },
+      {
+        title: 'Personal',
+        items: [{ label: 'My Profile', href: '/dashboard/profile', icon: Users }],
+      },
+    ],
+    permissions: {
+      team: 'edit', // Secretary can edit members/applications but not approve
+      suboffices: 'edit', // Secretary can edit office info
+      leads: 'manage',
+      inquiries: 'manage',
+      'activity-logs': 'view',
+    },
+  },
   'super-admin': {
     ...ROLE_META['super-admin'],
     navGroups: [
@@ -125,12 +164,22 @@ const ROLE_DASHBOARD_CONFIG: Record<string, RoleDashboardConfig> = {
     ...ROLE_META.franchise,
     navGroups: [
       { items: [{ label: 'Dashboard', href: '/dashboard/franchise', icon: LayoutDashboard }] },
-      { title: 'Team', items: [{ label: 'My Team', href: '/dashboard/franchise/team', icon: Users, moduleKey: 'team' }, { label: 'Salespersons', href: '/dashboard/franchise/salespersons', icon: Users, moduleKey: 'salespersons' }] },
+      {
+        title: 'Team',
+        items: [
+          { label: 'Applications', href: '/dashboard/franchise/applications', icon: ClipboardList, moduleKey: 'team' },
+          { label: 'My Team', href: '/dashboard/franchise/team', icon: Users, moduleKey: 'team' },
+          { label: 'Invitations', href: '/dashboard/franchise/invitations', icon: Link2 },
+          { label: 'Suboffices', href: '/dashboard/franchise/suboffices', icon: Building2, moduleKey: 'suboffices' },
+          { label: 'Org Settings', href: '/dashboard/franchise/settings', icon: Settings },
+          { label: 'Salespersons', href: '/dashboard/franchise/salespersons', icon: Users, moduleKey: 'salespersons' },
+        ],
+      },
       { title: 'Inventory', items: [{ label: 'Projects', href: '/dashboard/franchise/projects', icon: FolderOpen, moduleKey: 'projects' }, { label: 'Listings', href: '/dashboard/franchise/listings', icon: Home, moduleKey: 'listings' }] },
       { title: 'Sales', items: [{ label: 'Leads', href: '/dashboard/franchise/leads', icon: Target, moduleKey: 'leads' }, { label: 'Inquiries', href: '/dashboard/franchise/inquiries', icon: MessageSquare, moduleKey: 'inquiries' }, { label: 'Reports', href: '/dashboard/franchise/reports', icon: BarChart3, moduleKey: 'reports' }] },
       { title: 'Account', items: [{ label: 'Profile', href: '/dashboard/profile', icon: Users }] },
     ],
-    permissions: { team: 'manage', salespersons: 'manage', projects: 'view', listings: 'view', leads: 'manage', inquiries: 'manage', reports: 'view' },
+    permissions: { team: 'manage', suboffices: 'manage', salespersons: 'manage', projects: 'view', listings: 'view', leads: 'manage', inquiries: 'manage', reports: 'view' },
   },
   salesperson: {
     ...ROLE_META.salesperson,
@@ -150,7 +199,7 @@ const ROLE_DASHBOARD_CONFIG: Record<string, RoleDashboardConfig> = {
       { title: 'Pipeline', items: [{ label: 'My Leads', href: '/dashboard/agent/leads', icon: Target, moduleKey: 'leads' }, { label: 'My Inquiries', href: '/dashboard/agent/inquiries', icon: MessageSquare, moduleKey: 'inquiries' }] },
       { title: 'Account', items: [{ label: 'Profile', href: '/dashboard/profile', icon: Users }] },
     ],
-    permissions: { projects: 'view', listings: 'view', leads: 'manage-own', inquiries: 'view' },
+    permissions: { projects: 'view', listings: 'view', leads: 'manage-own', inquiries: 'manage-own' },
   },
   buyer: {
     ...ROLE_META.buyer,
@@ -296,6 +345,7 @@ export const DASHBOARD_MODULE_ACTION_SUPPORT: Record<DashboardModuleKey, Dashboa
   'saved-projects': { view: true, create: false, edit: false, delete: false, manage: false },
   'referral-leads': { view: true, create: false, edit: false, delete: false, manage: false },
   units: { view: true, create: true, edit: true, delete: true, manage: false },
+  suboffices: { view: true, create: true, edit: true, delete: true, manage: true },
 }
 
 export function getSupportedDashboardActions(moduleKey: DashboardModuleKey): DashboardActionPermissions {

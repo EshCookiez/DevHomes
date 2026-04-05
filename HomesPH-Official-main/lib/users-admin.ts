@@ -5,8 +5,21 @@ import {
   ACCOUNT_STATUS_MANUALLY_DISABLED,
   ACCOUNT_STATUS_REJECTED,
   isMissingAccountStateColumnError,
+  roleUsesTeamOwnerApproval,
   withNormalizedAccountState,
 } from '@/lib/account-status'
+import {
+  getApplicationAuditEmail,
+  isMissingApplicationArchiveColumnError,
+  withApplicationArchiveState,
+} from '@/lib/application-archive'
+import {
+  isMissingPrcStateColumnError,
+  withNormalizedPrcState,
+  PRC_STATUS_PENDING_VERIFICATION,
+  PRC_STATUS_REJECTED,
+  PRC_STATUS_VERIFIED,
+} from '@/lib/prc-status'
 import { redirect } from 'next/navigation'
 import { getDashboardPathForRole } from '@/lib/auth/roles'
 import { getCurrentDashboardUser } from '@/lib/auth/user'
@@ -30,12 +43,21 @@ interface UserProfileAdminRow {
   gender: string | null
   birthday: string | null
   profile_image_url: string | null
+  prc_number: string | null
+  prc_status: string | null
+  prc_reviewed_at: string | null
+  prc_reviewed_by: string | null
+  prc_rejection_reason: string | null
   role: string | null
   is_active: boolean | null
   account_status: string | null
   reviewed_at: string | null
   reviewed_by: string | null
   rejection_reason: string | null
+  application_archived_at: string | null
+  application_archive_reason: string | null
+  archived_company_id: number | null
+  archived_contact_email: string | null
   created_at: string | null
   updated_at: string | null
 }
@@ -51,6 +73,10 @@ function trimToNull(value: string | null | undefined) {
 
 function buildFullName(fname: string, lname: string) {
   return [fname.trim(), lname.trim()].filter(Boolean).join(' ').trim() || null
+}
+
+function normalizeManagedUserRow<T extends UserProfileAdminRow>(profile: T) {
+  return withNormalizedPrcState(withApplicationArchiveState(withNormalizedAccountState(profile)))
 }
 
 function isMissingDeveloperActiveColumn(error: { message?: string } | null | undefined) {
@@ -116,20 +142,39 @@ async function getAuthUsersMap() {
 async function getManagedUserProfiles(admin: ReturnType<typeof createAdminSupabaseClient>) {
   const primary = await admin
     .from('user_profiles')
-    .select('id,user_id,fname,mname,lname,full_name,gender,birthday,profile_image_url,role,is_active,account_status,reviewed_at,reviewed_by,rejection_reason,created_at,updated_at')
+    .select('id,user_id,fname,mname,lname,full_name,gender,birthday,profile_image_url,prc_number,prc_status,prc_reviewed_at,prc_reviewed_by,prc_rejection_reason,role,is_active,account_status,reviewed_at,reviewed_by,rejection_reason,application_archived_at,application_archive_reason,archived_company_id,archived_contact_email,created_at,updated_at')
     .order('created_at', { ascending: false })
 
-  if (!isMissingAccountStateColumnError(primary.error)) {
+  if (
+    !isMissingAccountStateColumnError(primary.error)
+    && !isMissingPrcStateColumnError(primary.error)
+    && !isMissingApplicationArchiveColumnError(primary.error)
+  ) {
     return primary
+  }
+
+  const fallbackWithAccountState = await admin
+    .from('user_profiles')
+    .select('id,user_id,fname,mname,lname,full_name,gender,birthday,profile_image_url,prc_number,role,is_active,account_status,reviewed_at,reviewed_by,rejection_reason,application_archived_at,application_archive_reason,archived_company_id,archived_contact_email,created_at,updated_at')
+    .order('created_at', { ascending: false })
+
+  if (
+    !isMissingAccountStateColumnError(fallbackWithAccountState.error)
+    && !isMissingApplicationArchiveColumnError(fallbackWithAccountState.error)
+  ) {
+    return {
+      data: (fallbackWithAccountState.data ?? []).map((profile) => normalizeManagedUserRow(profile as UserProfileAdminRow)),
+      error: fallbackWithAccountState.error,
+    }
   }
 
   const fallback = await admin
     .from('user_profiles')
-    .select('id,user_id,fname,mname,lname,full_name,gender,birthday,profile_image_url,role,is_active,created_at,updated_at')
+    .select('id,user_id,fname,mname,lname,full_name,gender,birthday,profile_image_url,prc_number,role,is_active,created_at,updated_at')
     .order('created_at', { ascending: false })
 
   return {
-    data: (fallback.data ?? []).map((profile) => withNormalizedAccountState(profile as UserProfileAdminRow)),
+    data: (fallback.data ?? []).map((profile) => normalizeManagedUserRow(profile as UserProfileAdminRow)),
     error: fallback.error,
   }
 }
@@ -200,6 +245,81 @@ async function updateManagedUserAccountState(
   return await getManagedUserByProfileId(profileId)
 }
 
+async function updateManagedUserPrcState(
+  profileId: string,
+  payload: {
+    prc_rejection_reason: string | null
+    prc_reviewed_at: string | null
+    prc_reviewed_by: string | null
+    prc_status: string
+  },
+) {
+  const admin = createAdminSupabaseClient()
+  const { error } = await admin
+    .from('user_profiles')
+    .update(payload)
+    .eq('id', profileId)
+
+  if (error) {
+    if (isMissingPrcStateColumnError(error)) {
+      throw new Error('user_profiles.prc_status and PRC review fields are required. Apply the latest PRC verification schema update first.')
+    }
+
+    throw new Error(error.message)
+  }
+
+  return await getManagedUserByProfileId(profileId)
+}
+
+async function assertPlatformCanManageAccountApproval(profileId: string) {
+  const admin = createAdminSupabaseClient()
+  const { data: profile, error } = await admin
+    .from('user_profiles')
+    .select('role')
+    .eq('id', profileId)
+    .maybeSingle<{ role: string | null }>()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  if (!profile) {
+    throw new Error('User profile not found.')
+  }
+
+  if (roleUsesTeamOwnerApproval(profile.role)) {
+    throw new Error('This account is approved by the franchise team workflow, not by platform admin.')
+  }
+}
+
+async function deleteManagedUserProfileArtifacts(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  profileId: string,
+) {
+  const childDeletes = await Promise.all([
+    admin.from('user_documents').delete().eq('user_profile_id', profileId),
+    admin.from('addresses').delete().eq('user_profile_id', profileId),
+    admin.from('company_members').delete().eq('user_profile_id', profileId),
+    admin.from('contact_information').delete().eq('user_profile_id', profileId),
+    admin.from('developers_profiles').delete().eq('user_profile_id', profileId),
+  ])
+
+  const childDeleteError = childDeletes.find((result) => result.error)?.error
+
+  if (childDeleteError) {
+    throw new Error(childDeleteError.message)
+  }
+
+  const { error: profileDeleteError } = await admin
+    .from('user_profiles')
+    .delete()
+    .eq('id', profileId)
+
+  if (profileDeleteError) {
+    throw new Error(profileDeleteError.message)
+  }
+}
+
 export async function requireUsersAccess() {
   const user = await getCurrentDashboardUser()
 
@@ -244,17 +364,18 @@ export async function getManagedUsers(): Promise<ManagedUserRecord[]> {
   }
 
   return ((profilesResult.data ?? []) as UserProfileAdminRow[]).map((profile) => {
-    const normalizedProfile = withNormalizedAccountState(profile)
+    const normalizedProfile = normalizeManagedUserRow(profile)
     const authUser = authUsers.get(profile.user_id)
+    const auditEmail = getApplicationAuditEmail(authUser?.email ?? '', normalizedProfile.archived_contact_email)
     const fullName = normalizedProfile.full_name?.trim()
       || [normalizedProfile.fname, normalizedProfile.lname].filter(Boolean).join(' ').trim()
-      || authUser?.email
+      || auditEmail
       || 'Unnamed User'
 
     return {
       ...normalizedProfile,
       full_name: fullName,
-      email: authUser?.email ?? '',
+      email: auditEmail,
       auth_created_at: authUser?.created_at ?? null,
       last_sign_in_at: authUser?.last_sign_in_at ?? null,
     }
@@ -390,6 +511,7 @@ export async function setManagedUserActive(profileId: string, isActive: boolean)
 
 export async function approveManagedUser(profileId: string) {
   const currentUser = await requireUsersAccess()
+  await assertPlatformCanManageAccountApproval(profileId)
 
   return await updateManagedUserAccountState(profileId, {
     is_active: true,
@@ -402,6 +524,7 @@ export async function approveManagedUser(profileId: string) {
 
 export async function rejectManagedUser(profileId: string, rejectionReason: string) {
   const currentUser = await requireUsersAccess()
+  await assertPlatformCanManageAccountApproval(profileId)
 
   return await updateManagedUserAccountState(profileId, {
     is_active: false,
@@ -409,6 +532,28 @@ export async function rejectManagedUser(profileId: string, rejectionReason: stri
     reviewed_at: new Date().toISOString(),
     reviewed_by: currentUser.userId,
     rejection_reason: trimToNull(rejectionReason),
+  })
+}
+
+export async function verifyManagedUserPrc(profileId: string) {
+  const currentUser = await requireUsersAccess()
+
+  return await updateManagedUserPrcState(profileId, {
+    prc_status: PRC_STATUS_VERIFIED,
+    prc_reviewed_at: new Date().toISOString(),
+    prc_reviewed_by: currentUser.userId,
+    prc_rejection_reason: null,
+  })
+}
+
+export async function rejectManagedUserPrc(profileId: string, rejectionReason: string) {
+  const currentUser = await requireUsersAccess()
+
+  return await updateManagedUserPrcState(profileId, {
+    prc_status: PRC_STATUS_REJECTED,
+    prc_reviewed_at: new Date().toISOString(),
+    prc_reviewed_by: currentUser.userId,
+    prc_rejection_reason: trimToNull(rejectionReason),
   })
 }
 
@@ -431,10 +576,24 @@ export async function deleteManagedUser(userId: string) {
   await requireUsersAccess()
 
   const admin = createAdminSupabaseClient()
+  const { data: profile, error: profileLookupError } = await admin
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle<{ id: string }>()
+
+  if (profileLookupError) {
+    throw new Error(profileLookupError.message)
+  }
+
   const { error } = await admin.auth.admin.deleteUser(userId)
 
   if (error) {
     throw new Error(error.message)
+  }
+
+  if (profile?.id) {
+    await deleteManagedUserProfileArtifacts(admin, profile.id)
   }
 }
 

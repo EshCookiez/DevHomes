@@ -1,7 +1,8 @@
 import { Clock3, ShieldCheck, UserPlus, UsersRound } from 'lucide-react'
-import { ACCOUNT_STATUS_PENDING_APPROVAL } from '@/lib/account-status'
+import { ACCOUNT_STATUS_PENDING_APPROVAL, roleUsesTeamOwnerApproval } from '@/lib/account-status'
+import { PRC_STATUS_PENDING_VERIFICATION, normalizePrcStatus } from '@/lib/prc-status'
 import { Card, CardContent } from '@/components/ui/card'
-import UsersTable from '@/components/users/users-table'
+import UsersTableClient from '@/components/users/users-table-client'
 import { getManagedUsers, getUserRoles, requireUsersAccess } from '@/lib/users-admin'
 
 export default async function DashboardUsersPage() {
@@ -13,7 +14,8 @@ export default async function DashboardUsersPage() {
   ])
 
   const activeUsers = users.filter((user) => user.is_active).length
-  const pendingUsers = users.filter((user) => user.account_status === ACCOUNT_STATUS_PENDING_APPROVAL).length
+  const pendingUsers = users.filter((user) => user.account_status === ACCOUNT_STATUS_PENDING_APPROVAL && !roleUsesTeamOwnerApproval(user.role)).length
+  const pendingPrcUsers = users.filter((user) => normalizePrcStatus(user.prc_status, user.role, user.prc_number) === PRC_STATUS_PENDING_VERIFICATION).length
   const admins = users.filter((user) => ['super_admin', 'admin'].includes(user.role ?? '')).length
 
   return (
@@ -27,7 +29,7 @@ export default async function DashboardUsersPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="flex items-center gap-4 px-5 py-5">
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
@@ -45,8 +47,19 @@ export default async function DashboardUsersPage() {
               <Clock3 size={20} />
             </span>
             <div>
-              <p className="text-sm text-slate-500">Pending Review</p>
+              <p className="text-sm text-slate-500">Account Queue</p>
               <p className="text-2xl font-black tracking-tight text-slate-900">{pendingUsers}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="flex items-center gap-4 px-5 py-5">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
+              <ShieldCheck size={20} />
+            </span>
+            <div>
+              <p className="text-sm text-slate-500">PRC Pending</p>
+              <p className="text-2xl font-black tracking-tight text-slate-900">{pendingPrcUsers}</p>
             </div>
           </CardContent>
         </Card>
@@ -74,7 +87,7 @@ export default async function DashboardUsersPage() {
         </Card>
       </div>
 
-      <UsersTable initialUsers={users} roles={roles} />
+      <UsersTableClient initialUsers={users} roles={roles} />
     </div>
   )
 }

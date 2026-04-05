@@ -1,14 +1,23 @@
 'use server'
 
 import { headers } from 'next/headers'
+import type { User } from '@supabase/supabase-js'
 import {
   ACCOUNT_STATUS_PENDING_APPROVAL,
   isMissingAccountStateColumnError,
 } from '@/lib/account-status'
+import {
+  PRC_STATUS_NOT_SUBMITTED,
+  PRC_STATUS_PENDING_VERIFICATION,
+  isMissingPrcStateColumnError,
+  roleUsesPrcVerification,
+} from '@/lib/prc-status'
+import { mapRoleToCompanySystemRole } from '@/lib/company-members'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { uploadPublicFile, ensureImageFile } from '@/lib/storage'
 
-type RegistrationRole = 'developer' | 'salesperson' | 'ambassador' | 'franchise'
+export type RegistrationRole = 'developer' | 'salesperson' | 'ambassador' | 'franchise' | 'franchise_secretary'
 
 interface BaseRegistrationInput {
   role: RegistrationRole
@@ -20,16 +29,34 @@ interface BaseRegistrationInput {
   affiliateCode?: string | null
   source?: string | null
   campaign?: string | null
+  referralId?: string | null // For direct invites
+  token?: string | null // For secure company invitations
+}
+
+interface SecretaryRegistrationInput extends BaseRegistrationInput {
+  role: 'franchise_secretary'
 }
 
 interface FranchiseRegistrationInput extends BaseRegistrationInput {
   role: 'franchise'
   prcNumber?: string | null
+  isCompanyLinked?: boolean
+  companyName?: string | null
+  officeStreet?: string | null
+  officeCity?: string | null
+  officeZip?: string | null
+  idUploadUrl?: string | null
 }
 
 interface SalespersonRegistrationInput extends BaseRegistrationInput {
   role: 'salesperson'
   prcNumber?: string | null
+  isCompanyLinked?: boolean
+  companyName?: string | null
+  officeStreet?: string | null
+  officeCity?: string | null
+  officeZip?: string | null
+  idUploadUrl?: string | null
 }
 
 interface DeveloperRegistrationInput extends BaseRegistrationInput {
@@ -46,11 +73,19 @@ export type RegisterAccountInput =
   | AmbassadorRegistrationInput 
   | FranchiseRegistrationInput
   | SalespersonRegistrationInput
+  | SecretaryRegistrationInput
 
 export interface RegisterAccountResult {
   success: boolean
   message: string
   email?: string
+}
+
+interface InvitationContext {
+  companyId: number
+  email: string
+  id: string
+  invitedRole: RegistrationRole
 }
 
 function trimValue(value: string | null | undefined) {
@@ -64,6 +99,206 @@ function trimToNull(value: string | null | undefined) {
 
 function buildFullName(fname: string, lname: string) {
   return [fname, lname].filter(Boolean).join(' ').trim()
+}
+
+function getInitialPrcStatus(role: string, prcNumber: string | null) {
+  if (!roleUsesPrcVerification(role)) {
+    return PRC_STATUS_NOT_SUBMITTED
+  }
+
+  return prcNumber ? PRC_STATUS_PENDING_VERIFICATION : PRC_STATUS_NOT_SUBMITTED
+}
+
+async function deleteRegistrationProfileArtifacts(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  authUserId: string,
+) {
+  const { data: profile, error: profileLookupError } = await admin
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', authUserId)
+    .maybeSingle<{ id: string }>()
+
+  if (profileLookupError) {
+    throw new Error(profileLookupError.message)
+  }
+
+  if (!profile?.id) {
+    return
+  }
+
+  const childDeletes = await Promise.all([
+    admin.from('user_documents').delete().eq('user_profile_id', profile.id),
+    admin.from('addresses').delete().eq('user_profile_id', profile.id),
+    admin.from('company_members').delete().eq('user_profile_id', profile.id),
+    admin.from('contact_information').delete().eq('user_profile_id', profile.id),
+    admin.from('developers_profiles').delete().eq('user_profile_id', profile.id),
+  ])
+
+  const childDeleteError = childDeletes.find((result) => result.error)?.error
+
+  if (childDeleteError) {
+    throw new Error(childDeleteError.message)
+  }
+
+  const { error: profileDeleteError } = await admin
+    .from('user_profiles')
+    .delete()
+    .eq('id', profile.id)
+
+  if (profileDeleteError) {
+    throw new Error(profileDeleteError.message)
+  }
+}
+
+function explainInvitationSessionError(message: string | undefined) {
+  const normalizedMessage = message?.trim()
+  const loweredMessage = normalizedMessage?.toLowerCase() ?? ''
+
+  if (loweredMessage.includes('auth session missing')) {
+    return 'Auth session missing means this page was opened without the active invitation login. Open the latest invitation email and complete registration in that same browser.'
+  }
+
+  return normalizedMessage || 'Unable to continue the invitation registration flow.'
+}
+
+function isRegistrationRole(value: string): value is RegistrationRole {
+  return ['developer', 'salesperson', 'ambassador', 'franchise', 'franchise_secretary'].includes(value)
+}
+
+function normalizeRegistrationRole(role: RegistrationRole): Exclude<RegistrationRole, 'franchise_secretary'> | 'salesperson' {
+  return role === 'franchise_secretary' ? 'salesperson' : role
+}
+
+async function resolveInvitationContext(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  token: string | null | undefined,
+): Promise<InvitationContext | null> {
+  const normalizedToken = trimValue(token)
+
+  if (!normalizedToken) {
+    return null
+  }
+
+  const { data, error } = await admin
+    .from('company_invitations')
+    .select('id, company_id, email, invited_role, status, expires_at')
+    .eq('invitation_token', normalizedToken)
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle<{
+      company_id: number
+      email: string
+      expires_at: string
+      id: string
+      invited_role: string
+      status: string
+    }>()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  if (!data) {
+    return null
+  }
+
+  if (!isRegistrationRole(data.invited_role)) {
+    throw new Error('This invitation has an unsupported role.')
+  }
+
+  return {
+    id: data.id,
+    companyId: data.company_id,
+    email: data.email.trim().toLowerCase(),
+    invitedRole: data.invited_role,
+  }
+}
+
+type ResolvedAuthUser = {
+  authUser: User
+  createdByRegistration: boolean
+  usedInvitationSession: boolean
+}
+
+async function resolveRegistrationAuthUser(params: {
+  email: string
+  input: RegisterAccountInput
+  metadata: Record<string, unknown>
+  normalizedOrigin: string
+  password: string
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>
+}): Promise<ResolvedAuthUser | RegisterAccountResult> {
+  const { supabase, input, email, password, metadata, normalizedOrigin } = params
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser()
+
+  if (input.token) {
+    if (!currentUser) {
+      return {
+        success: false,
+        message: explainInvitationSessionError('Auth session missing'),
+      }
+    }
+
+    const invitedEmail = currentUser.email?.trim().toLowerCase()
+
+    if (!invitedEmail) {
+      return { success: false, message: 'The invited account is missing an email address.' }
+    }
+
+    if (invitedEmail !== email) {
+      return { success: false, message: 'Use the invited email address to complete registration.' }
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      password,
+      data: metadata,
+    })
+
+    if (error) {
+      return { success: false, message: explainInvitationSessionError(error.message) }
+    }
+
+    return {
+      authUser: data.user ?? currentUser,
+      createdByRegistration: false,
+      usedInvitationSession: true,
+    }
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: metadata,
+      emailRedirectTo: `${normalizedOrigin}/login?notice=approval-pending`,
+    },
+  })
+
+  if (error) {
+    return { success: false, message: error.message }
+  }
+
+  const authUser = data.user
+
+  if (!authUser) {
+    return { success: false, message: 'Unable to create user account.' }
+  }
+
+  if (Array.isArray(authUser.identities) && authUser.identities.length === 0) {
+    return {
+      success: false,
+      message: 'An account with this email already exists or is awaiting confirmation.',
+    }
+  }
+
+  return {
+    authUser,
+    createdByRegistration: true,
+    usedInvitationSession: false,
+  }
 }
 
 async function upsertContactInformation(admin: ReturnType<typeof createAdminSupabaseClient>, userProfileId: string, email: string, phone: string) {
@@ -152,6 +387,32 @@ async function upsertDeveloperProfile(admin: ReturnType<typeof createAdminSupaba
   }
 }
 
+async function markInvitationAccepted(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  invitation: InvitationContext,
+) {
+  const { error: retireAcceptedError } = await admin
+    .from('company_invitations')
+    .delete()
+    .eq('company_id', invitation.companyId)
+    .eq('email', invitation.email)
+    .eq('status', 'accepted')
+    .neq('id', invitation.id)
+
+  if (retireAcceptedError) {
+    throw new Error(retireAcceptedError.message)
+  }
+
+  const { error: invitationUpdateError } = await admin
+    .from('company_invitations')
+    .update({ status: 'accepted' })
+    .eq('id', invitation.id)
+
+  if (invitationUpdateError) {
+    throw new Error(invitationUpdateError.message)
+  }
+}
+
 export async function registerAccountAction(input: RegisterAccountInput): Promise<RegisterAccountResult> {
   const headersList = await headers()
   const origin = headersList.get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -179,17 +440,30 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
     return { success: false, message: 'Password must be at least 8 characters.' }
   }
 
-  if (input.role === 'developer' && !trimValue(input.companyName)) {
+  const supabase = await createServerSupabaseClient()
+  const admin = createAdminSupabaseClient()
+  const invitation = await resolveInvitationContext(admin, input.token)
+  const effectiveRole = normalizeRegistrationRole(invitation?.invitedRole ?? input.role)
+  const fullName = buildFullName(fname, lname)
+  const developerCompanyName = 'companyName' in input ? trimValue(input.companyName) : ''
+  const requestedCompanyName = 'companyName' in input ? trimToNull(input.companyName) : null
+  const requestedPrcNumber = 'prcNumber' in input ? trimToNull(input.prcNumber) : null
+
+  if (effectiveRole === 'developer' && !developerCompanyName) {
     return { success: false, message: 'Company / developer name is required.' }
   }
 
-  const supabase = await createServerSupabaseClient()
-  const admin = createAdminSupabaseClient()
-  const fullName = buildFullName(fname, lname)
-
   let licensedPrcNumber: string | null = null
-  if (input.role === 'franchise' || input.role === 'salesperson') {
-    licensedPrcNumber = trimToNull(input.prcNumber)
+  if (effectiveRole === 'franchise' || effectiveRole === 'salesperson') {
+    licensedPrcNumber = requestedPrcNumber
+  }
+
+  if (input.token && !invitation) {
+    return { success: false, message: 'This invitation is invalid, expired, or has already been used.' }
+  }
+
+  if (invitation && invitation.email !== email) {
+    return { success: false, message: 'Use the invited email address to complete registration.' }
   }
 
   const metadata = {
@@ -197,38 +471,28 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
     last_name: lname,
     full_name: fullName,
     phone,
-    role: input.role,
-    ...(input.role === 'developer' ? { company_name: trimValue(input.companyName) } : {}),
+    role: effectiveRole,
+    ...(effectiveRole === 'developer' ? { company_name: developerCompanyName } : {}),
+    ...('isCompanyLinked' in input ? { is_company_linked: input.isCompanyLinked, company_name: requestedCompanyName } : {}),
     prc_number: licensedPrcNumber,
   }
 
-  const { data, error } = await supabase.auth.signUp({
+  const authResolution = await resolveRegistrationAuthUser({
+    supabase,
+    input,
     email,
     password,
-    options: {
-      data: metadata,
-      emailRedirectTo: `${normalizedOrigin}/login?notice=approval-pending`,
-    },
+    metadata,
+    normalizedOrigin,
   })
 
-  if (error) {
-    return { success: false, message: error.message }
+  if ('success' in authResolution) {
+    return authResolution
   }
 
-  const authUser = data.user
+  const { authUser, createdByRegistration, usedInvitationSession } = authResolution
 
-  if (!authUser) {
-    return { success: false, message: 'Unable to create user account.' }
-  }
-
-  if (Array.isArray(authUser.identities) && authUser.identities.length === 0) {
-    return {
-      success: false,
-      message: 'An account with this email already exists or is awaiting confirmation.',
-    }
-  }
-
-  let referredById: string | null = null
+  let referredById: string | null = input.referralId || null
   if (input.affiliateCode) {
     const { data: refCode } = await admin
       .from('referral_codes')
@@ -287,8 +551,12 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
         fname,
         lname,
         full_name: fullName,
-        role: input.role,
+        role: effectiveRole,
         prc_number: licensedPrcNumber,
+        prc_status: getInitialPrcStatus(effectiveRole, licensedPrcNumber),
+        prc_reviewed_at: null,
+        prc_reviewed_by: null,
+        prc_rejection_reason: null,
         referred_by: referredById,
         is_active: false,
         account_status: ACCOUNT_STATUS_PENDING_APPROVAL,
@@ -300,8 +568,8 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
       .single<{ id: string }>()
 
     if (profileError || !profile) {
-      if (isMissingAccountStateColumnError(profileError)) {
-        throw new Error('user_profiles.account_status and review fields are required for approval-based registration. Apply the latest schema update first.')
+      if (isMissingAccountStateColumnError(profileError) || isMissingPrcStateColumnError(profileError)) {
+        throw new Error('user_profiles approval and PRC workflow fields are required for this registration flow. Apply the latest schema update first.')
       }
 
       throw new Error(profileError?.message ?? 'Unable to create user profile.')
@@ -309,23 +577,103 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
 
     await upsertContactInformation(admin, profile.id, email, phone)
 
-    if (input.role === 'developer') {
-      await upsertDeveloperProfile(admin, profile.id, trimValue(input.companyName))
+    if (effectiveRole === 'developer') {
+      await upsertDeveloperProfile(admin, profile.id, developerCompanyName)
+    }
+
+    if ((effectiveRole === 'franchise' || effectiveRole === 'salesperson') && 'isCompanyLinked' in input) {
+      if (input.isCompanyLinked && input.companyName) {
+        const { error: compErr } = await admin.from('company_profiles').insert({
+          user_profile_id: profile.id,
+          company_name: trimValue(input.companyName),
+        })
+        if (compErr) console.error('Failed to create company_profile', compErr)
+      }
+    }
+
+    // Always save the ID document for franchise/salesperson regardless of company link
+    if ((effectiveRole === 'franchise' || effectiveRole === 'salesperson') && 'idUploadUrl' in input && input.idUploadUrl) {
+      const fileName = input.idUploadUrl.split('/').pop() ?? 'id-document'
+      const { error: docErr } = await admin.from('user_documents').insert({
+        user_profile_id: profile.id,
+        document_type: 'valid_id',
+        category: 'identity',
+        file_name: fileName,
+        file_url: input.idUploadUrl
+      })
+      if (docErr) console.error('Failed to insert user_document', docErr)
+    }
+
+    // Automated company linking for secretaries and referred members
+    if (invitation) {
+      const systemRole = mapRoleToCompanySystemRole(effectiveRole)
+
+      const { error: linkErr } = await admin.from('company_members').upsert({
+        company_id: invitation.companyId,
+        user_profile_id: profile.id,
+        system_role: systemRole,
+      }, { onConflict: 'company_id,user_profile_id' })
+
+      if (linkErr) {
+        throw new Error(`Unable to link this invited account to the franchise office. ${linkErr.message}`)
+      }
+
+      await markInvitationAccepted(admin, invitation)
+    } else if (referredById) {
+      // Find the company owned by the referrer
+      const { data: referrerCompany } = await admin
+        .from('company_profiles')
+        .select('id')
+        .eq('user_profile_id', referredById)
+        .is('parent_company_id', null)
+        .maybeSingle()
+
+      if (referrerCompany) {
+        const systemRole = mapRoleToCompanySystemRole(effectiveRole)
+
+        const { error: linkErr } = await admin.from('company_members').upsert({
+          company_id: referrerCompany.id,
+          user_profile_id: profile.id,
+          system_role: systemRole,
+        }, { onConflict: 'company_id,user_profile_id' })
+        if (linkErr) throw new Error(`Unable to link this account to the referrer company. ${linkErr.message}`)
+      }
     }
 
     await supabase.auth.signOut()
 
     return {
       success: true,
-      message: 'Account created. Verify your email to place your registration in the admin approval queue.',
+      message: usedInvitationSession
+        ? 'Invitation accepted. Your account is now pending franchise review and owner approval. PRC verification is handled separately by platform admin.'
+        : 'Account created. Verify your email to place your registration in the approval queue.',
       email,
     }
   } catch (persistError) {
-    await admin.auth.admin.deleteUser(authUser.id)
+    if (createdByRegistration) {
+      await admin.auth.admin.deleteUser(authUser.id)
+      await deleteRegistrationProfileArtifacts(admin, authUser.id)
+    } else if (usedInvitationSession) {
+      await deleteRegistrationProfileArtifacts(admin, authUser.id)
+    }
 
     return {
       success: false,
       message: persistError instanceof Error ? persistError.message : 'Unable to finish registration.',
     }
+  }
+}
+
+export async function uploadIdAction(formData: FormData) {
+  const file = formData.get('file') as File | null
+  if (!file) return { success: false, message: 'No file provided' }
+  try {
+    ensureImageFile(file)
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `identity-docs/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
+    const publicUrl = await uploadPublicFile({ file, path, provider: 'supabase' })
+    return { success: true, url: publicUrl }
+  } catch (error: any) {
+    return { success: false, message: error.message }
   }
 }

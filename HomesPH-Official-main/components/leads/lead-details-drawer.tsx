@@ -27,8 +27,12 @@ export default function LeadDetailsDrawer({ open, onOpenChange, lead, timeline }
               <div className="grid gap-4 md:grid-cols-2">
                 <DetailCard label="Project" value={lead.project_name || 'Not linked'} />
                 <DetailCard label="Assigned Agent" value={lead.assigned_agent || 'Unassigned'} />
+                <DetailCard label="Queue" value={lead.queue_level === 'main_queue' ? 'Main Queue' : lead.queue_level === 'suboffice_queue' ? 'Suboffice Queue' : 'Assigned'} />
+                <DetailCard label="Routing Office" value={lead.routing_office_name || 'Main Office'} />
                 <DetailCard label="Source" value={lead.source || 'Unknown'} />
                 <DetailCard label="Lead Score" value={lead.lead_score !== null ? String(lead.lead_score) : 'Not scored'} />
+                <DetailCard label="Assigned By" value={lead.assigned_by_name || 'Not recorded'} />
+                <DetailCard label="Assignment Expires" value={formatDate(lead.assignment_expires_at)} />
               </div>
 
               <Card className="border-slate-200 shadow-sm"><CardContent className="space-y-4 px-5 py-5"><div className="flex items-center justify-between"><p className="text-sm font-semibold text-slate-900">Current Status</p><Badge variant="outline" className="rounded-full border-blue-200 bg-blue-50 text-blue-700">{lead.status.replace(/_/g, ' ')}</Badge></div><div className="text-sm text-slate-600"><p>Last Contact Date: {formatDate(lead.last_contacted_at)}</p><p className="mt-3 whitespace-pre-wrap">{lead.notes || 'No notes added yet.'}</p></div></CardContent></Card>

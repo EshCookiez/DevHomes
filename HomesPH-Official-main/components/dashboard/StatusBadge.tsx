@@ -7,6 +7,12 @@ const COLOR_MAP: Record<string, string> = {
   approved:      'bg-emerald-50 text-emerald-700 ring-emerald-200',
   'closed won':  'bg-emerald-50 text-emerald-700 ring-emerald-200',
   verified:      'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  pending_approval:'bg-amber-50 text-amber-700 ring-amber-200',
+  under_review:  'bg-blue-50 text-blue-700 ring-blue-200',
+  correction_required:'bg-rose-50 text-rose-700 ring-rose-200',
+  pending_verification:'bg-amber-50 text-amber-700 ring-amber-200',
+  not_submitted: 'bg-slate-100 text-slate-600 ring-slate-200',
+  manually_disabled:'bg-slate-100 text-slate-600 ring-slate-200',
   qualified:     'bg-blue-50 text-blue-700 ring-blue-200',
   pending:       'bg-amber-50  text-amber-700  ring-amber-200',
   contacted:     'bg-amber-50  text-amber-700  ring-amber-200',
@@ -27,7 +33,7 @@ export default function StatusBadge({ status }: { status: string }) {
       'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ring-1 ring-inset',
       COLOR_MAP[key] ?? 'bg-slate-100 text-slate-600 ring-slate-200',
     )}>
-      {status}
+      {status.replace(/_/g, ' ')}
     </span>
   )
 }

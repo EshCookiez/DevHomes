@@ -59,7 +59,7 @@ function buildAnalytics(leads: LeadRecord[]): LeadAnalyticsBundle {
   }
 }
 
-export default function LeadsManagementClient({ initialLeads, analytics, users, agents, projects, pageTitle = 'Leads Management', pageDescription = 'Monitor, assign, and move sales leads through the CRM pipeline.', canCreate = true, canEdit = true, canAssign = true, canDelete = true, enablePipeline = true }: { initialLeads: LeadRecord[]; analytics: LeadAnalyticsBundle; users: LeadUserOptionRecord[]; agents: LeadUserOptionRecord[]; projects: LeadProjectOptionRecord[]; pageTitle?: string; pageDescription?: string; canCreate?: boolean; canEdit?: boolean; canAssign?: boolean; canDelete?: boolean; enablePipeline?: boolean }) {
+export default function LeadsManagementClient({ initialLeads, analytics, users, agents, projects, pageTitle = 'Leads Management', pageDescription = 'Monitor, assign, and move sales leads through the CRM pipeline.', canCreate = true, canEdit = true, canAssign = true, canDelete = true, canReturn = true, enablePipeline = true }: { initialLeads: LeadRecord[]; analytics: LeadAnalyticsBundle; users: LeadUserOptionRecord[]; agents: LeadUserOptionRecord[]; projects: LeadProjectOptionRecord[]; pageTitle?: string; pageDescription?: string; canCreate?: boolean; canEdit?: boolean; canAssign?: boolean; canDelete?: boolean; canReturn?: boolean; enablePipeline?: boolean }) {
   const router = useRouter()
   const { toast } = useToast()
   const [leads, setLeads] = useState(initialLeads)
@@ -115,7 +115,7 @@ export default function LeadsManagementClient({ initialLeads, analytics, users, 
           <TabsTrigger value="table" className="rounded-xl px-4 py-2.5">Table View</TabsTrigger>
           {enablePipeline ? <TabsTrigger value="pipeline" className="rounded-xl px-4 py-2.5">Pipeline View</TabsTrigger> : null}
         </TabsList>
-        <TabsContent value="table"><LeadsTable leads={leads} users={users} agents={agents} projects={projects} timelineMap={timelineMap} onChange={setLeads} canCreate={canCreate} canEdit={canEdit} canAssign={canAssign} canDelete={canDelete} /></TabsContent>
+        <TabsContent value="table"><LeadsTable leads={leads} users={users} agents={agents} projects={projects} timelineMap={timelineMap} onChange={setLeads} canCreate={canCreate} canEdit={canEdit} canAssign={canAssign} canDelete={canDelete} canReturn={canReturn} /></TabsContent>
         {enablePipeline ? <TabsContent value="pipeline"><LeadsKanbanBoard leads={leads} onStatusChange={handleKanbanStatusChange} canDrag={canEdit} /></TabsContent> : null}
       </Tabs>
     </div>

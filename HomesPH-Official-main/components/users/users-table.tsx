@@ -73,8 +73,18 @@ import {
   ACCOUNT_STATUS_REJECTED,
   getAccountStatusLabel,
   normalizeAccountStatus,
+  roleUsesTeamOwnerApproval,
   type AccountStatus,
 } from '@/lib/account-status'
+import {
+  getPrcStatusLabel,
+  normalizePrcStatus,
+  roleUsesPrcVerification,
+  PRC_STATUS_PENDING_VERIFICATION,
+  PRC_STATUS_REJECTED,
+  PRC_STATUS_VERIFIED,
+  type PrcStatus,
+} from '@/lib/prc-status'
 import { cn } from '@/lib/utils'
 import type { ManagedUserRecord, UserRoleRecord } from '@/lib/users-types'
 import UserCreateModal from './user-create-modal'
@@ -85,8 +95,10 @@ import {
   approveUserAction,
   deleteUserAction,
   rejectUserAction,
+  rejectUserPrcAction,
   resetUserPasswordAction,
   setUserStatusAction,
+  verifyUserPrcAction,
 } from '@/app/dashboard/users/actions'
 
 const PAGE_SIZE = 10
@@ -113,6 +125,24 @@ function getUserStatus(user: ManagedUserRecord) {
   return normalizeAccountStatus(user.account_status, user.is_active)
 }
 
+function getUserPrcStatus(user: ManagedUserRecord) {
+  return normalizePrcStatus(user.prc_status, user.role, user.prc_number)
+}
+
+function canPlatformManageAccountApproval(user: ManagedUserRecord) {
+  return !roleUsesTeamOwnerApproval(user.role)
+}
+
+function getVisibleAccountStatusLabel(user: ManagedUserRecord) {
+  const status = getUserStatus(user)
+
+  if (status === ACCOUNT_STATUS_PENDING_APPROVAL && roleUsesTeamOwnerApproval(user.role)) {
+    return 'Pending Team Approval'
+  }
+
+  return getAccountStatusLabel(user.account_status, user.is_active)
+}
+
 function getStatusBadgeClass(status: AccountStatus) {
   switch (status) {
     case ACCOUNT_STATUS_PENDING_APPROVAL:
@@ -123,6 +153,19 @@ function getStatusBadgeClass(status: AccountStatus) {
       return 'border-slate-200 bg-slate-100 text-slate-600'
     default:
       return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+  }
+}
+
+function getPrcBadgeClass(status: PrcStatus) {
+  switch (status) {
+    case PRC_STATUS_PENDING_VERIFICATION:
+      return 'border-amber-200 bg-amber-50 text-amber-700'
+    case PRC_STATUS_REJECTED:
+      return 'border-rose-200 bg-rose-50 text-rose-700'
+    case PRC_STATUS_VERIFIED:
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    default:
+      return 'border-slate-200 bg-slate-100 text-slate-600'
   }
 }
 
@@ -146,10 +189,13 @@ export default function UsersTable({
   const [statusUser, setStatusUser] = useState<ManagedUserRecord | null>(null)
   const [approveUser, setApproveUser] = useState<ManagedUserRecord | null>(null)
   const [rejectUser, setRejectUser] = useState<ManagedUserRecord | null>(null)
+  const [verifyPrcUser, setVerifyPrcUser] = useState<ManagedUserRecord | null>(null)
+  const [rejectPrcUser, setRejectPrcUser] = useState<ManagedUserRecord | null>(null)
   const [deleteUser, setDeleteUser] = useState<ManagedUserRecord | null>(null)
   const [passwordUser, setPasswordUser] = useState<ManagedUserRecord | null>(null)
   const [password, setPassword] = useState('')
   const [rejectionReason, setRejectionReason] = useState('')
+  const [prcRejectionReason, setPrcRejectionReason] = useState('')
   const [isPending, startTransition] = useTransition()
 
   function patchUser(nextUser: ManagedUserRecord) {
@@ -248,6 +294,37 @@ export default function UsersTable({
       toast({ title: 'User rejected', description: result.message })
       setRejectUser(null)
       setRejectionReason('')
+    })
+  }
+
+  async function handleVerifyPrc(user: ManagedUserRecord) {
+    startTransition(async () => {
+      const result = await verifyUserPrcAction(user.id)
+
+      if (!result.success || !result.data) {
+        toast({ title: 'PRC verification failed', description: result.message, variant: 'destructive' })
+        return
+      }
+
+      patchUser(result.data)
+      toast({ title: 'PRC verified', description: result.message })
+      setVerifyPrcUser(null)
+    })
+  }
+
+  async function handleRejectPrc(user: ManagedUserRecord) {
+    startTransition(async () => {
+      const result = await rejectUserPrcAction(user.id, prcRejectionReason)
+
+      if (!result.success || !result.data) {
+        toast({ title: 'PRC rejection failed', description: result.message, variant: 'destructive' })
+        return
+      }
+
+      patchUser(result.data)
+      toast({ title: 'PRC rejected', description: result.message })
+      setRejectPrcUser(null)
+      setPrcRejectionReason('')
     })
   }
 
@@ -359,6 +436,7 @@ export default function UsersTable({
                 <th className="px-4 py-4">Email</th>
                 <th className="px-4 py-4">Role</th>
                 <th className="px-4 py-4">Status</th>
+                <th className="px-4 py-4">PRC</th>
                 <th className="px-4 py-4">
                   <button className="inline-flex items-center gap-1 text-left" onClick={() => setSortBy('date')}>
                     Created Date
@@ -381,6 +459,11 @@ export default function UsersTable({
                   <td className="px-4 py-4">
                     <div>
                       <p className="font-semibold text-slate-900">{user.full_name}</p>
+                      {user.application_archived_at ? (
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Archived rejected application
+                        </p>
+                      ) : null}
                       <p className="text-xs text-slate-500">{user.gender ? user.gender.replace(/_/g, ' ') : 'Not set'}</p>
                     </div>
                   </td>
@@ -390,7 +473,12 @@ export default function UsersTable({
                   </td>
                   <td className="px-4 py-4">
                     <Badge variant="outline" className={cn('rounded-full border px-2.5 py-0.5', getStatusBadgeClass(getUserStatus(user)))}>
-                      {getAccountStatusLabel(user.account_status, user.is_active)}
+                      {getVisibleAccountStatusLabel(user)}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-4">
+                    <Badge variant="outline" className={cn('rounded-full border px-2.5 py-0.5', getPrcBadgeClass(getUserPrcStatus(user)))}>
+                      {getPrcStatusLabel(user.prc_status, user.role, user.prc_number)}
                     </Badge>
                   </td>
                   <td className="px-4 py-4 text-slate-600">{formatDate(user.auth_created_at ?? user.created_at)}</td>
@@ -403,13 +491,13 @@ export default function UsersTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52 rounded-xl border-slate-200">
-                        {([ACCOUNT_STATUS_PENDING_APPROVAL, ACCOUNT_STATUS_REJECTED] as readonly string[]).includes(getUserStatus(user)) ? (
+                        {canPlatformManageAccountApproval(user) && ([ACCOUNT_STATUS_PENDING_APPROVAL, ACCOUNT_STATUS_REJECTED] as readonly string[]).includes(getUserStatus(user)) ? (
                           <DropdownMenuItem onClick={() => setApproveUser(user)}>
                             <UserRoundCheck size={15} />
                             {getUserStatus(user) === ACCOUNT_STATUS_REJECTED ? 'Approve User' : 'Approve Registration'}
                           </DropdownMenuItem>
                         ) : null}
-                        {([ACCOUNT_STATUS_PENDING_APPROVAL, ACCOUNT_STATUS_REJECTED] as readonly string[]).includes(getUserStatus(user)) ? (
+                        {canPlatformManageAccountApproval(user) && ([ACCOUNT_STATUS_PENDING_APPROVAL, ACCOUNT_STATUS_REJECTED] as readonly string[]).includes(getUserStatus(user)) ? (
                           <DropdownMenuItem onClick={() => {
                             setRejectUser(user)
                             setRejectionReason(user.rejection_reason ?? '')
@@ -418,7 +506,23 @@ export default function UsersTable({
                             {getUserStatus(user) === ACCOUNT_STATUS_REJECTED ? 'Update Rejection Note' : 'Reject Registration'}
                           </DropdownMenuItem>
                         ) : null}
-                        {([ACCOUNT_STATUS_PENDING_APPROVAL, ACCOUNT_STATUS_REJECTED] as readonly string[]).includes(getUserStatus(user)) ? <DropdownMenuSeparator /> : null}
+                        {canPlatformManageAccountApproval(user) && ([ACCOUNT_STATUS_PENDING_APPROVAL, ACCOUNT_STATUS_REJECTED] as readonly string[]).includes(getUserStatus(user)) ? <DropdownMenuSeparator /> : null}
+                        {roleUsesPrcVerification(user.role) && user.prc_number?.trim() && getUserPrcStatus(user) !== PRC_STATUS_VERIFIED ? (
+                          <DropdownMenuItem onClick={() => setVerifyPrcUser(user)}>
+                            <ShieldCheck size={15} />
+                            {getUserPrcStatus(user) === PRC_STATUS_REJECTED ? 'Verify PRC' : 'Mark PRC Verified'}
+                          </DropdownMenuItem>
+                        ) : null}
+                        {roleUsesPrcVerification(user.role) && user.prc_number?.trim() && getUserPrcStatus(user) !== PRC_STATUS_VERIFIED ? (
+                          <DropdownMenuItem onClick={() => {
+                            setRejectPrcUser(user)
+                            setPrcRejectionReason(user.prc_rejection_reason ?? '')
+                          }}>
+                            <BadgeAlert size={15} />
+                            {getUserPrcStatus(user) === PRC_STATUS_REJECTED ? 'Update PRC Note' : 'Reject PRC'}
+                          </DropdownMenuItem>
+                        ) : null}
+                        {roleUsesPrcVerification(user.role) && user.prc_number?.trim() && getUserPrcStatus(user) !== PRC_STATUS_VERIFIED ? <DropdownMenuSeparator /> : null}
                         <DropdownMenuItem onClick={() => setSelectedUser(user)}>
                           <Eye size={15} />
                           View Profile
@@ -452,7 +556,7 @@ export default function UsersTable({
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={8} className="px-6 py-14 text-center text-sm text-slate-500">
+                  <td colSpan={9} className="px-6 py-14 text-center text-sm text-slate-500">
                     No users match the current filters.
                   </td>
                 </tr>
@@ -568,6 +672,66 @@ export default function UsersTable({
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={Boolean(verifyPrcUser)} onOpenChange={(open) => !open && setVerifyPrcUser(null)}>
+        <AlertDialogContent className="rounded-xl border-slate-200">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Verify PRC?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This marks the submitted PRC details as verified without changing the account approval status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="rounded-xl bg-[#1428ae] text-white hover:bg-[#0f1f8a]" onClick={(event) => {
+              event.preventDefault()
+              if (verifyPrcUser) {
+                handleVerifyPrc(verifyPrcUser)
+              }
+            }}>
+              {isPending ? 'Saving...' : 'Verify PRC'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={Boolean(rejectPrcUser)} onOpenChange={(open) => {
+        if (!open) {
+          setRejectPrcUser(null)
+          setPrcRejectionReason('')
+        }
+      }}>
+        <DialogContent className="max-w-lg rounded-xl border-slate-200">
+          <DialogHeader>
+            <DialogTitle>{rejectPrcUser && getUserPrcStatus(rejectPrcUser) === PRC_STATUS_REJECTED ? 'Update PRC rejection note' : 'Reject PRC verification'}</DialogTitle>
+            <DialogDescription>
+              Add a note for why the PRC details could not be verified. This does not change the account approval status.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>Reason</Label>
+            <Textarea
+              className="min-h-28 rounded-xl border-slate-200"
+              placeholder="Explain what needs to be corrected in the PRC details"
+              value={prcRejectionReason}
+              onChange={(event) => setPrcRejectionReason(event.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => {
+              setRejectPrcUser(null)
+              setPrcRejectionReason('')
+            }}>Cancel</Button>
+            <Button className="rounded-xl bg-rose-600 hover:bg-rose-700" disabled={isPending || prcRejectionReason.trim().length < 10} onClick={() => {
+              if (rejectPrcUser) {
+                handleRejectPrc(rejectPrcUser)
+              }
+            }}>
+              {isPending ? 'Saving...' : 'Reject PRC'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={Boolean(statusUser)} onOpenChange={(open) => !open && setStatusUser(null)}>
         <AlertDialogContent className="rounded-xl border-slate-200">
           <AlertDialogHeader>
@@ -597,7 +761,7 @@ export default function UsersTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete user?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the account from authentication and deletes the linked profile record.
+              This permanently removes the auth account and clears linked profile, contact, membership, and document records.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

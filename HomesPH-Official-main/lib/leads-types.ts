@@ -13,6 +13,7 @@ export type LeadStatus = typeof LEAD_STATUSES[number]
 export interface LeadUserOptionRecord {
   id: string
   full_name: string
+  office_name?: string | null
   role: string | null
 }
 
@@ -33,9 +34,21 @@ export interface LeadRecord {
   last_contacted_at: string | null
   created_at: string | null
   updated_at: string | null
+  parent_company_id: number | null
+  routing_company_id: number | null
+  current_company_id: number | null
+  assigned_by_profile_id: string | null
+  assigned_at: string | null
+  assignment_expires_at: string | null
+  last_returned_at: string | null
+  queue_level: 'main_queue' | 'suboffice_queue' | 'agent'
   lead_name: string | null
   assigned_agent: string | null
+  assigned_by_name: string | null
   project_name: string | null
+  current_office_name: string | null
+  routing_office_name: string | null
+  is_expired: boolean
 }
 
 export interface LeadInput {

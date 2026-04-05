@@ -26,9 +26,31 @@ export const ROLE_META: Record<string, { label: string; badge: string }> = {
   'ambassador':   { label: 'Ambassador',    badge: 'bg-pink-500'   },
   'developer':    { label: 'Developer',     badge: 'bg-orange-500' },
   'bank-manager': { label: 'Bank Manager',  badge: 'bg-teal-500'   },
+  'secretary':    { label: 'Operations',    badge: 'bg-indigo-500' },
 }
 
 export const NAV_CONFIG: Record<string, NavGroup[]> = {
+  'secretary': [
+    { items: [{ label: 'Dashboard', href: '/dashboard/secretary', icon: LayoutDashboard }] },
+    {
+      title: 'Operations',
+      items: [
+        { label: 'Agent Reviews', href: '/dashboard/secretary/applications', icon: ClipboardList, badge: 'New' },
+        { label: 'Team Directory', href: '/dashboard/secretary/members', icon: Users },
+        { label: 'Leads', href: '/dashboard/secretary/leads', icon: Target },
+        { label: 'Inquiries', href: '/dashboard/secretary/inquiries', icon: MessageSquare },
+        { label: 'Invitations', href: '/dashboard/secretary/invitations', icon: Link2 },
+        { label: 'Office Details', href: '/dashboard/secretary/office', icon: Building2 },
+        { label: 'Documents', href: '/dashboard/secretary/documents', icon: FileText },
+      ],
+    },
+    {
+      title: 'Personal',
+      items: [
+        { label: 'My Profile', href: '/dashboard/profile', icon: Users },
+      ],
+    },
+  ],
   'super-admin': [
     { items: [{ label: 'Dashboard', href: '/dashboard/super-admin', icon: LayoutDashboard }] },
     {
@@ -148,14 +170,34 @@ export const NAV_CONFIG: Record<string, NavGroup[]> = {
   'franchise': [
     { items: [{ label: 'Dashboard', href: '/dashboard/franchise', icon: LayoutDashboard }] },
     {
+      title: 'Team',
+      items: [
+        { label: 'Applications', href: '/dashboard/franchise/applications', icon: ClipboardList },
+        { label: 'My Team',    href: '/dashboard/franchise/team',       icon: Users      },
+        { label: 'Invitations', href: '/dashboard/franchise/invitations', icon: Link2    },
+        { label: 'Suboffices', href: '/dashboard/franchise/suboffices', icon: Building2  },
+        { label: 'Org Settings', href: '/dashboard/franchise/settings', icon: Settings   },
+      ],
+    },
+    {
+      title: 'Inventory',
+      items: [
+        { label: 'Projects',   href: '/dashboard/franchise/projects',   icon: FolderOpen },
+        { label: 'Listings',   href: '/dashboard/franchise/listings',   icon: Home       },
+      ],
+    },
+    {
       title: 'Sales',
       items: [
-        { label: 'My Team',  href: '/dashboard/franchise/team',     icon: Users      },
-        { label: 'Leads',    href: '/dashboard/franchise/leads',    icon: UserPlus   },
-        { label: 'Projects', href: '/dashboard/franchise/projects', icon: FolderOpen },
-        { label: 'Listings', href: '/dashboard/franchise/listings', icon: Home       },
-        { label: 'Reports',  href: '/dashboard/franchise/reports',  icon: BarChart3  },
-        { label: 'Profile',  href: '/dashboard/profile',         icon: Users      },
+        { label: 'Leads',      href: '/dashboard/franchise/leads',      icon: UserPlus   },
+        { label: 'Inquiries',  href: '/dashboard/franchise/inquiries',  icon: MessageSquare },
+        { label: 'Reports',    href: '/dashboard/franchise/reports',    icon: BarChart3  },
+      ],
+    },
+    {
+      title: 'Account',
+      items: [
+        { label: 'Profile',    href: '/dashboard/profile',              icon: Users      },
       ],
     },
   ],

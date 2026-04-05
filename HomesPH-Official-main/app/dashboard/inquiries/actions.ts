@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { deleteInquiry, replyToInquiry, updateInquiryStatus } from '@/lib/inquiries-admin'
+import { assignInquiryAgent, deleteInquiry, replyToInquiry, returnInquiryToQueue, updateInquiryStatus } from '@/lib/inquiries-admin'
 import type { InquiryRecord, InquiryStatus } from '@/lib/inquiries-types'
 
 interface ActionResult<T = undefined> {
@@ -12,7 +12,11 @@ interface ActionResult<T = undefined> {
 
 function revalidateInquirySurfaces() {
   revalidatePath('/dashboard/inquiries')
+  revalidatePath('/dashboard/franchise/inquiries')
+  revalidatePath('/dashboard/secretary/inquiries')
   revalidatePath('/dashboard/buyer/inquiries')
+  revalidatePath('/dashboard/salesperson/inquiries')
+  revalidatePath('/dashboard/agent/inquiries')
   revalidatePath('/dashboard/developer/inquiries')
 }
 
@@ -33,6 +37,26 @@ export async function replyToInquiryAction(id: number, message: string): Promise
     return { success: true, message: 'Reply sent.', data }
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : 'Unable to send reply.' }
+  }
+}
+
+export async function assignInquiryAgentAction(id: number, assignedTo: string): Promise<ActionResult<InquiryRecord>> {
+  try {
+    const data = await assignInquiryAgent(id, assignedTo)
+    revalidateInquirySurfaces()
+    return { success: true, message: 'Inquiry assignment updated.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Unable to assign inquiry.' }
+  }
+}
+
+export async function returnInquiryToQueueAction(id: number): Promise<ActionResult<InquiryRecord>> {
+  try {
+    const data = await returnInquiryToQueue(id)
+    revalidateInquirySurfaces()
+    return { success: true, message: 'Inquiry returned to queue.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Unable to return inquiry to queue.' }
   }
 }
 

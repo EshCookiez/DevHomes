@@ -3,6 +3,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import {
   removeAddress,
   saveAddress,
@@ -112,6 +114,28 @@ export async function sendResetPasswordAction(email: string): Promise<ActionResu
 
 export async function skipProfileCompletionAction() {
   const cookieStore = await cookies()
+  const supabase = await createServerSupabaseClient()
+  const admin = createAdminSupabaseClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    throw new Error('Unable to load the current account.')
+  }
+
+  const { error: metadataError } = await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: {
+      ...(user.user_metadata ?? {}),
+      profile_completion_skipped: true,
+    },
+  })
+
+  if (metadataError) {
+    throw new Error(metadataError.message)
+  }
+
   cookieStore.set('profile-completion-skip', '1', {
     httpOnly: true,
     sameSite: 'lax',
@@ -119,5 +143,6 @@ export async function skipProfileCompletionAction() {
     path: '/',
   })
 
+  revalidateProfileSurfaces()
   redirect('/dashboard')
 }

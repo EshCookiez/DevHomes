@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { assignLeadAgent, createLead, deleteLead, updateLead, updateLeadNote, updateLeadStatus } from '@/lib/leads-admin'
+import { assignLeadAgent, createLead, deleteLead, returnLeadToQueue, updateLead, updateLeadNote, updateLeadStatus } from '@/lib/leads-admin'
 import type { LeadInput, LeadRecord, LeadStatus } from '@/lib/leads-types'
 
 interface ActionResult<T = undefined> {
@@ -13,6 +13,7 @@ interface ActionResult<T = undefined> {
 function revalidateLeadSurfaces() {
   revalidatePath('/dashboard/leads')
   revalidatePath('/dashboard/franchise/leads')
+  revalidatePath('/dashboard/secretary/leads')
   revalidatePath('/dashboard/salesperson/leads')
   revalidatePath('/dashboard/agent/leads')
   revalidatePath('/dashboard/developer/leads')
@@ -55,6 +56,16 @@ export async function assignLeadAgentAction(id: number, assignedTo: string): Pro
     return { success: true, message: 'Lead assignment updated.', data }
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : 'Unable to assign agent.' }
+  }
+}
+
+export async function returnLeadToQueueAction(id: number): Promise<ActionResult<LeadRecord>> {
+  try {
+    const data = await returnLeadToQueue(id)
+    revalidateLeadSurfaces()
+    return { success: true, message: 'Lead returned to queue.', data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Unable to return lead to queue.' }
   }
 }
 

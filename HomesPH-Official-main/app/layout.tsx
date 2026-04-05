@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { Outfit, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import InviteRedirectHandler from '@/components/auth/InviteRedirectHandler'
 import { Toaster } from '@/components/ui/toaster'
+import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import PageTransitionLoader from '@/components/layout/PageTransitionLoader'
 import { getSiteSettings } from '../lib/site-settings'
 import './globals.css'
@@ -83,8 +85,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased`} suppressHydrationWarning>
         <PageTransitionLoader />
+        <InviteRedirectHandler />
         {children}
         <Toaster />
+        <SonnerToaster richColors position="top-right" />
         <Analytics />
       </body>
     </html>

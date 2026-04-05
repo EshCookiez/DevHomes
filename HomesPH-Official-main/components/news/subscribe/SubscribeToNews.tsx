@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Icon } from '@iconify/react'
+import { Bell, CheckCircle2 } from 'lucide-react'
 import { SubscribeModal } from './SubscribeModal'
 
 export function SubscribeToNews({ autoOpen = false }: { autoOpen?: boolean }) {
@@ -17,7 +17,7 @@ export function SubscribeToNews({ autoOpen = false }: { autoOpen?: boolean }) {
           {/* Left content */}
           <div className="flex-1 min-w-0">
             <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full" style={{ background: '#002143' }}>
-              <Icon icon="mdi:bell" width={18} height={18} style={{ color: '#FFE8A6' }} />
+              <Bell size={18} style={{ color: '#FFE8A6' }} />
               <span className="text-[13px] font-semibold tracking-wide uppercase" style={{ fontFamily: 'Outfit', color: '#FFE8A6' }}>
                 Daily News Brief
               </span>
@@ -57,7 +57,7 @@ export function SubscribeToNews({ autoOpen = false }: { autoOpen?: boolean }) {
               ].map((item, i) => (
                 <li key={i} className="flex gap-2.5 items-start">
                   <span className="shrink-0 mt-0.5">
-                    <Icon icon="mdi:check-circle" width={20} height={20} style={{ color: '#FFE8A6' }} />
+                    <CheckCircle2 size={20} style={{ color: '#FFE8A6' }} />
                   </span>
                   <span className="text-[15px] sm:text-[16px] md:text-[18px] font-light leading-[1.45]" style={{ fontFamily: 'Outfit', color: '#FFFFFF' }}>
                     {item}

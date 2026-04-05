@@ -1,8 +1,10 @@
 'use client'
 
-import { getAccountStatusLabel, normalizeAccountStatus, type AccountStatus } from '@/lib/account-status'
+import { useEffect, useState } from 'react'
+import { getAccountStatusLabel, normalizeAccountStatus, roleUsesTeamOwnerApproval, type AccountStatus } from '@/lib/account-status'
+import { getPrcStatusDescription, getPrcStatusLabel } from '@/lib/prc-status'
 import { format } from 'date-fns'
-import { CalendarDays, Mail, ShieldCheck, UserRound } from 'lucide-react'
+import { CalendarDays, ExternalLink, FileText, Mail, ShieldCheck, UserRound } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -13,6 +15,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import type { ManagedUserRecord } from '@/lib/users-types'
+import { getUserDocumentUrl } from '@/app/dashboard/users/actions'
 
 function formatDate(value: string | null) {
   if (!value) return 'Not available'
@@ -43,6 +46,16 @@ function getStatusBadgeClass(status: AccountStatus) {
   }
 }
 
+function getVisibleAccountStatusLabel(user: ManagedUserRecord) {
+  const status = normalizeAccountStatus(user.account_status, user.is_active)
+
+  if (status === 'pending_approval' && roleUsesTeamOwnerApproval(user.role)) {
+    return 'Pending Team Approval'
+  }
+
+  return getAccountStatusLabel(user.account_status, user.is_active)
+}
+
 export default function UserProfileDrawer({
   open,
   onOpenChange,
@@ -53,6 +66,20 @@ export default function UserProfileDrawer({
   user: ManagedUserRecord | null
 }) {
   const status = user ? normalizeAccountStatus(user.account_status, user.is_active) : null
+  const [idDocUrl, setIdDocUrl] = useState<string | null>(null)
+  const [loadingDoc, setLoadingDoc] = useState(false)
+
+  useEffect(() => {
+    if (!user?.id) {
+      setIdDocUrl(null)
+      return
+    }
+    setLoadingDoc(true)
+    getUserDocumentUrl(user.id).then((url) => {
+      setIdDocUrl(url)
+      setLoadingDoc(false)
+    })
+  }, [user?.id])
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
@@ -75,7 +102,7 @@ export default function UserProfileDrawer({
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Badge variant="outline" className="rounded-full border-blue-200 bg-blue-50 text-blue-700">{(user.role ?? 'unknown').replace(/_/g, ' ')}</Badge>
                   <Badge variant="outline" className={getStatusBadgeClass(status ?? 'approved')}>
-                    {getAccountStatusLabel(user.account_status, user.is_active)}
+                    {getVisibleAccountStatusLabel(user)}
                   </Badge>
                 </div>
               </div>
@@ -84,10 +111,13 @@ export default function UserProfileDrawer({
             <div className="grid gap-4 sm:grid-cols-2">
               <DetailCard icon={Mail} label="Email" value={user.email} />
               <DetailCard icon={ShieldCheck} label="Role" value={(user.role ?? 'Not assigned').replace(/_/g, ' ')} />
-              <DetailCard icon={ShieldCheck} label="Account Status" value={getAccountStatusLabel(user.account_status, user.is_active)} />
+              <DetailCard icon={ShieldCheck} label="Account Status" value={getVisibleAccountStatusLabel(user)} />
+              <DetailCard icon={FileText} label="PRC Number" value={user.prc_number?.trim() || 'Not provided'} />
+              <DetailCard icon={ShieldCheck} label="PRC Status" value={getPrcStatusLabel(user.prc_status, user.role, user.prc_number)} />
               <DetailCard icon={UserRound} label="Gender" value={user.gender ? user.gender.replace(/_/g, ' ') : 'Not set'} />
               <DetailCard icon={CalendarDays} label="Birthday" value={formatDate(user.birthday)} />
               <DetailCard icon={CalendarDays} label="Last Reviewed" value={formatDate(user.reviewed_at)} />
+              <DetailCard icon={CalendarDays} label="PRC Reviewed" value={formatDate(user.prc_reviewed_at)} />
               <DetailCard icon={CalendarDays} label="Account Created" value={formatDate(user.auth_created_at ?? user.created_at)} />
               <DetailCard icon={CalendarDays} label="Last Login" value={formatDate(user.last_sign_in_at)} />
             </div>
@@ -98,6 +128,53 @@ export default function UserProfileDrawer({
                 <p className="mt-2 text-sm text-rose-800">{user.rejection_reason}</p>
               </div>
             ) : null}
+
+            {/* ── Valid ID Document ── */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">PRC Verification</p>
+              <p className="mt-2 text-sm text-slate-700">
+                {getPrcStatusDescription(user.prc_status, user.role, user.prc_number, user.prc_rejection_reason)}
+              </p>
+              {user.prc_rejection_reason ? (
+                <p className="mt-3 text-sm text-rose-700">
+                  <span className="font-semibold">PRC note:</span> {user.prc_rejection_reason}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                <FileText size={14} />
+                Valid ID / Identity Document
+              </div>
+              {loadingDoc ? (
+                <p className="text-sm text-slate-400 animate-pulse">Loading document…</p>
+              ) : idDocUrl ? (
+                <div className="space-y-2">
+                  {/* If it's an image, show inline preview */}
+                  {/\.(jpg|jpeg|png|webp|gif)$/i.test(idDocUrl) ? (
+                    <a href={idDocUrl} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={idDocUrl}
+                        alt="Valid ID"
+                        className="w-full rounded-lg border border-slate-200 object-cover max-h-48 cursor-pointer hover:opacity-90 transition-opacity"
+                      />
+                    </a>
+                  ) : null}
+                  <a
+                    href={idDocUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm font-semibold text-[#0c1f4a] hover:underline"
+                  >
+                    <ExternalLink size={14} />
+                    View Full Document
+                  </a>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 italic">No ID document uploaded.</p>
+              )}
+            </div>
           </div>
         ) : null}
       </DrawerContent>

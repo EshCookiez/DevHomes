@@ -6,9 +6,9 @@ import { Mail, MailOpen, MessageSquareReply, MessageSquareX } from 'lucide-react
 import InquiriesTable from '@/components/inquiries/inquiries-table'
 import { Card, CardContent } from '@/components/ui/card'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import type { InquiryListingOptionRecord, InquiryProjectOptionRecord, InquiryRecord } from '@/lib/inquiries-types'
+import type { InquiryAgentOptionRecord, InquiryListingOptionRecord, InquiryProjectOptionRecord, InquiryRecord } from '@/lib/inquiries-types'
 
-export default function InquiriesManagementClient({ initialInquiries, projects, listings, pageTitle = 'Property Inquiries', pageDescription = 'Track inbound buyer messages, reply workflows, and inquiry status across listings and projects.', canReply = true, canUpdateStatus = true, canDelete = true }: { initialInquiries: InquiryRecord[]; projects: InquiryProjectOptionRecord[]; listings: InquiryListingOptionRecord[]; pageTitle?: string; pageDescription?: string; canReply?: boolean; canUpdateStatus?: boolean; canDelete?: boolean }) {
+export default function InquiriesManagementClient({ initialInquiries, projects, listings, agents, pageTitle = 'Property Inquiries', pageDescription = 'Track inbound buyer messages, reply workflows, and inquiry status across listings and projects.', canReply = true, canUpdateStatus = true, canDelete = true, canAssign = false, canReturn = false }: { initialInquiries: InquiryRecord[]; projects: InquiryProjectOptionRecord[]; listings: InquiryListingOptionRecord[]; agents: InquiryAgentOptionRecord[]; pageTitle?: string; pageDescription?: string; canReply?: boolean; canUpdateStatus?: boolean; canDelete?: boolean; canAssign?: boolean; canReturn?: boolean }) {
   const router = useRouter()
   const [inquiries, setInquiries] = useState(initialInquiries)
 
@@ -36,7 +36,7 @@ export default function InquiriesManagementClient({ initialInquiries, projects, 
         <MetricCard title="Closed" value={closedCount.toString()} icon={MessageSquareX} tone="slate" />
       </div>
 
-      <InquiriesTable inquiries={inquiries} projects={projects} listings={listings} onChange={setInquiries} canReply={canReply} canUpdateStatus={canUpdateStatus} canDelete={canDelete} />
+      <InquiriesTable inquiries={inquiries} projects={projects} listings={listings} agents={agents} onChange={setInquiries} canReply={canReply} canUpdateStatus={canUpdateStatus} canDelete={canDelete} canAssign={canAssign} canReturn={canReturn} />
     </div>
   )
 }

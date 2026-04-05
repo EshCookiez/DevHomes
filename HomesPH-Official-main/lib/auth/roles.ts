@@ -8,6 +8,7 @@ export const DB_ROLE_TO_ROUTE_SEGMENT = {
   developer: 'developer',
   agent: 'agent',
   bank_manager: 'bank-manager',
+  franchise_secretary: 'secretary',
 } as const
 
 export const ROUTE_SEGMENT_TO_DB_ROLE = Object.fromEntries(

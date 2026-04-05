@@ -9,6 +9,10 @@ export interface UserProfileRecord {
   birthday: string | null
   profile_image_url: string | null
   prc_number: string | null
+  prc_rejection_reason: string | null
+  prc_reviewed_at: string | null
+  prc_reviewed_by: string | null
+  prc_status: string | null
   role: string | null
   created_at: string | null
   updated_at: string | null

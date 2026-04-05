@@ -26,9 +26,9 @@ const ROLES = [
     key: 'franchise',
     href: '/registration/franchise',
     icon: BadgeCheck,
-    title: 'Franchise Partner',
+    title: 'Franchise Partner & Salesperson',
     description:
-      'Start your own real estate agency branch with our proven database and marketing systems.',
+      'Join our network as a Franchise Partner or Agent with proven database and marketing systems.',
     badge: 'For Agencies',
     badgeColor: 'bg-amber-50 text-amber-700',
     cta: 'Register as Franchise',

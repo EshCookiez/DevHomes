@@ -9,7 +9,15 @@ function getLoginNotice(notice: string | string[] | undefined) {
     const value = Array.isArray(notice) ? notice[0] : notice
 
     if (value === 'approval-pending') {
-        return 'After you verify your email, an admin must approve your account before dashboard access is enabled.'
+        return 'After you verify your email, your registration will stay in the approval queue until the reviewing team completes the final check.'
+    }
+
+    if (value === 'invite-registration-submitted') {
+        return 'Registration submitted. No email verification needed. Your franchise office and owner will review it next.'
+    }
+
+    if (value === 'correction-requested') {
+        return 'Sign in to review the correction note from your franchise office and resubmit your application details.'
     }
 
     return null
@@ -154,5 +162,3 @@ export default async function LoginPage(props: {
         </div>
     )
 }
-
-
