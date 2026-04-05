@@ -6,9 +6,8 @@ import { getSiteSettings } from '@/lib/site-settings'
 import { SELECTED_LOCATION_COOKIE } from '@/lib/selected-location'
 import { formatLocationForNews } from '@/lib/news-navigation'
 import { getArticles as getArticlesFromAPI } from '@/lib/hybrid-articles'
-import { RealEstateNewsSection } from '@/components/news/RealEstateNewsSection'
-import { CityNewsExplorer } from '@/components/news/CityNewsExplorer'
 import { NewsTicker } from '@/components/news/NewsTicker'
+import AdBanner from '@/components/ui/AdBanner'
 
 interface Article {
   id: number | string
@@ -37,6 +36,16 @@ interface ArticleCollection {
   currentPage: number
   lastPage: number
   perPage: number
+}
+
+// Locations that should include each other's articles
+const RELATED_LOCATIONS: Record<string, string[]> = {
+  bgc: ['taguig'],
+  taguig: ['bgc'],
+}
+
+function getRelatedLocations(location: string): string[] {
+  return RELATED_LOCATIONS[normalizeValue(location)] ?? []
 }
 
 const LOCATION_KEYWORDS = [
@@ -126,10 +135,12 @@ function normalizeArticle(article: Article): Article {
 function matchesLocation(article: Article, location: string) {
   const normalizedLocation = normalizeValue(location)
   if (!normalizedLocation) return false
+  const locationsToMatch = [normalizedLocation, ...getRelatedLocations(normalizedLocation)]
   const values = [article.location, article.city, ...(article.tags ?? []), ...(article.topics ?? [])]
   return values.some(value => {
     const normalized = normalizeValue(value)
-    return normalized ? normalized.includes(normalizedLocation) || normalizedLocation.includes(normalized) : false
+    if (!normalized) return false
+    return locationsToMatch.some(loc => normalized.includes(loc) || loc.includes(normalized))
   })
 }
 
@@ -464,18 +475,21 @@ export default async function NewsPage({
   const locationDisplayName = (focusedLocation ?? routeLocation ?? '')
     .split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
-  // Fetch city-specific articles using city_slug
-  const [settings, cityFeed, allFeed] = await Promise.all([
+  // Fetch city-specific articles using city_slug (including related locations)
+  const relatedSlugs = focusedLocation ? getRelatedLocations(focusedLocation) : []
+  const [settings, cityFeed, allFeed, ...relatedFeeds] = await Promise.all([
     getSiteSettings(),
     focusedLocation
       ? fetchArticleCollection(focusedLocation, 1, 100)
       : Promise.resolve({ articles: [], total: 0, currentPage: 1, lastPage: 1, perPage: 0 }),
     fetchArticleCollection(undefined, 1, 100),
+    ...relatedSlugs.map(slug => fetchArticleCollection(slug, 1, 100)),
   ])
 
   // City-specific articles: prefer API city_slug results, then client-side matching
+  const relatedArticles = relatedFeeds.flatMap(feed => feed.articles)
   const cityArticles = dedupeArticles(
-    [...cityFeed.articles, ...allFeed.articles.filter(a => matchesLocation(a, focusedLocation ?? routeLocation))]
+    [...cityFeed.articles, ...relatedArticles, ...allFeed.articles.filter(a => matchesLocation(a, focusedLocation ?? routeLocation))]
       .map(normalizeArticle)
   ).sort(sortByNewest)
 
@@ -529,17 +543,7 @@ export default async function NewsPage({
 
         {/* ── Ad Space ────────────────────────────────────────────────── */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] mt-10">
-          <div
-            className="w-full flex items-center justify-center rounded-[20px]"
-            style={{ minHeight: 195, border: '1px dashed #1428AE', background: '#FFFFFF' }}
-          >
-            <span
-              className="font-[100] text-[80px] leading-[100px] text-center select-none"
-              style={{ fontFamily: 'Outfit', color: '#1428AE' }}
-            >
-              ADS SPACE
-            </span>
-          </div>
+          <AdBanner />
         </div>
 
         {/* ── Location Latest Updates ──────────────────────────────────── */}
@@ -553,7 +557,7 @@ export default async function NewsPage({
 
           {/* 4-column news cards */}
           <div className="grid gap-[22px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {allArticles.slice(0, 12).map(article => (
+            {cityArticles.slice(0, 12).map(article => (
               <Link
                 key={article.id}
                 href={`/news/${article.slug}`}
@@ -605,15 +609,6 @@ export default async function NewsPage({
               </Link>
             ))}
           </div>
-        </div>
-
-        {/* ── Carousel Sections ────────────────────────────────────────── */}
-        <div className="mt-12 space-y-[43px]">
-          <RealEstateNewsSection articles={allArticles} />
-          <CityNewsExplorer
-            allArticles={allArticles}
-            currentLocation={focusedLocation || routeLocation}
-          />
         </div>
 
         {/* ── Areas Section ────────────────────────────────────────────── */}

@@ -13,6 +13,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Share2, Printer, Copy, X } from 'lucide-react'
 import { ExternalArticle, renderContentBlocks } from '@/lib/external-api'
+import AdBanner from '@/components/ui/AdBanner'
 
 interface ArticleDetailProps {
   article: ExternalArticle
@@ -171,13 +172,8 @@ export function ArticleDetailComponent({
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Ad Banner Placeholder */}
-          <div className="rounded-lg bg-gray-200 h-80 flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-3xl font-extrabold text-gray-600">ADS</p>
-              <p className="text-sm text-gray-500 mt-2">Advertisement</p>
-            </div>
-          </div>
+          {/* Ad Banner */}
+          <AdBanner sizes={['300x250']} />
 
           {/* Related Articles */}
           {relatedArticles.length > 0 && (
@@ -223,12 +219,7 @@ export function ArticleDetailComponent({
           )}
 
           {/* Ad Banner Bottom */}
-          <div className="rounded-lg bg-gray-200 h-80 flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-3xl font-extrabold text-gray-600">ADS</p>
-              <p className="text-sm text-gray-500 mt-2">Advertisement</p>
-            </div>
-          </div>
+          <AdBanner sizes={['300x250']} />
         </div>
       </div>
     </article>

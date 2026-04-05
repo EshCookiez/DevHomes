@@ -16,12 +16,12 @@ function fmtDate(value: string) {
 function timeAgo(value: string) {
   const diff = Date.now() - new Date(value).getTime()
   const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 1) return 'Just Now'
+  if (minutes < 60) return `${minutes} ${minutes === 1 ? 'Minute' : 'Minutes'} Ago`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return `${hours} ${hours === 1 ? 'Hour' : 'Hours'} Ago`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
+  if (days < 7) return `${days} ${days === 1 ? 'Day' : 'Days'} Ago`
   return fmtDate(value)
 }
 
@@ -142,7 +142,7 @@ export default async function ArticleDetailPage({
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        {/* Header Section */}
+        {/* Header Section - above both columns */}
         <ArticleHeader 
           title={article.title}
           updatedTime={timeAgo(article.published_at)}
@@ -154,13 +154,22 @@ export default async function ArticleDetailPage({
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
           {/* Main Content */}
           <div className="space-y-8">
-            {/* Featured Image */}
+            {/* Category + City label, then Featured Image */}
             {image && (
               <div>
-                {article.category && (
-                  <p className="mt-3 text-sm font-medium text-[#1428ae]" style={{ fontFamily: 'Outfit' }}>
-                    {article.category}
-                  </p>
+                {(article.category || article.city_name) && (
+                  <div className="flex items-center gap-2 mb-3">
+                    {article.category && (
+                      <p className="text-sm font-medium text-[#1428ae]" style={{ fontFamily: 'Outfit' }}>
+                        {article.category}
+                      </p>
+                    )}
+                    {article.city_name && (
+                      <p className="text-sm font-medium text-[#1428ae]" style={{ fontFamily: 'Outfit' }}>
+                        {article.city_name}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -203,14 +212,9 @@ export default async function ArticleDetailPage({
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:pt-[50px]">
             {/* Ad Banner */}
-            <div className="rounded-lg bg-gray-200 h-80 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-3xl font-extrabold text-gray-600">ADS</p>
-                <p className="text-sm text-gray-500 mt-2">Advertisement</p>
-              </div>
-            </div>
+            <AdBanner sizes={['300x250']} />
 
             {/* Latest Stories */}
             {latestStories.length > 0 && (
@@ -273,12 +277,7 @@ export default async function ArticleDetailPage({
             )}
 
             {/* Ad Banner Bottom */}
-            <div className="rounded-lg bg-gray-200 h-80 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-3xl font-extrabold text-gray-600">ADS</p>
-                <p className="text-sm text-gray-500 mt-2">Advertisement</p>
-              </div>
-            </div>
+            <AdBanner sizes={['300x250']} />
           </div>
         </div>
       </main>

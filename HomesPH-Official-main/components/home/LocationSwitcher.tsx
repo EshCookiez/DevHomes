@@ -5,7 +5,7 @@ import { useSelectedLocation } from '@/hooks/use-selected-location'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 
-const SECTION_ROUTES = new Set(['buy', 'rent', 'projects'])
+const SECTION_ROUTES = new Set(['buy', 'rent', 'projects', 'news'])
 const STATIC_ROOT_SEGMENTS = new Set([
   'buy',
   'rent',
