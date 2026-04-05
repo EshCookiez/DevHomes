@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { Share2, Printer, Copy, X } from 'lucide-react'
 import { ExternalArticle, renderContentBlocks } from '@/lib/external-api'
 import AdBanner from '@/components/ui/AdBanner'
+import { buildArticleHref } from '@/lib/article-href'
 
 interface ArticleDetailProps {
   article: ExternalArticle
@@ -185,7 +186,7 @@ export function ArticleDetailComponent({
                 {relatedArticles.map((related) => (
                   <Link
                     key={related.id}
-                    href={`/news/${related.slug}`}
+                    href={buildArticleHref(related.slug, related.city_slug)}
                     className="group block hover:text-[#1428ae] transition-colors"
                   >
                     <div className="flex gap-3">
@@ -255,7 +256,7 @@ export function ArticleCardGrid({
  */
 export function ArticleCard({ article }: { article: ExternalArticle }) {
   return (
-    <Link href={`/news/${article.slug}`} className="group">
+    <Link href={buildArticleHref(article.slug, article.city_slug)} className="group">
       <div className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
         {/* Image */}
         {article.image && (
@@ -310,7 +311,7 @@ export function ArticleCard({ article }: { article: ExternalArticle }) {
  */
 export function ArticlePreview({ article }: { article: ExternalArticle }) {
   return (
-    <Link href={`/news/${article.slug}`} className="group block">
+    <Link href={buildArticleHref(article.slug, article.city_slug)} className="group block">
       <div className="flex gap-3 p-2 hover:bg-gray-50 rounded transition-colors">
         {article.image && (
           <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-gray-200">

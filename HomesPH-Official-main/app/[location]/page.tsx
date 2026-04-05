@@ -73,6 +73,7 @@ export default async function LocationPage({ params }: LocationPageProps) {
     author?: string
     published_at: string
     tags?: string[]
+    city_slug?: string | null
   }> = []
   try {
     const result = await getArticlesFromAPI({
@@ -89,6 +90,7 @@ export default async function LocationPage({ params }: LocationPageProps) {
       author: article.author,
       published_at: article.published_at,
       tags: article.topics ?? [],
+      city_slug: article.city_slug || null,
     }))
   } catch (error) {
     console.error('[LocationPage] Failed to fetch news articles:', error)

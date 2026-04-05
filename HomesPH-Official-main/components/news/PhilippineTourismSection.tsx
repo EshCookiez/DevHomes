@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { buildArticleHref } from '@/lib/article-href'
 
 interface Article {
   id: number | string
@@ -12,6 +13,7 @@ interface Article {
   image?: string
   category?: string
   location?: string
+  city_slug?: string | null
   published_at?: string
   excerpt?: string
   summary?: string
@@ -125,7 +127,7 @@ export function PhilippineTourismSection({
             {displayArticles.map(article => (
               <Link
                 key={article.id}
-                href={`/news/${article.slug}`}
+                href={buildArticleHref(article.slug, article.city_slug)}
                 className="group flex shrink-0 w-[290px] h-[350px] flex-col overflow-hidden rounded-[15px] bg-white shadow-[0px_1px_5px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0px_4px_12px_rgba(0,0,0,0.2)]"
               >
                 {/* Image area */}
