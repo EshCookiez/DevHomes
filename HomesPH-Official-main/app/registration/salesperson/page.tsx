@@ -1,7 +1,7 @@
 import SiteHeader from '@/components/layout/SiteHeader'
 import SiteFooter from '@/components/layout/SiteFooter'
 import { getSiteSettings } from '@/lib/site-settings'
-import SalespersonRegisterForm from '@/components/auth/SalespersonRegisterForm'
+import FranchiseRegistrationWizard from '@/components/auth/FranchiseRegistrationWizard'
 import { Suspense } from 'react'
 
 export default async function SalespersonRegisterPage() {
@@ -63,7 +63,7 @@ export default async function SalespersonRegisterPage() {
         <div className="flex-1 flex items-start lg:items-center justify-center px-5 pb-12 pt-0 lg:py-14 bg-slate-50">
           <div className="w-full flex justify-center -mt-10 lg:mt-0">
             <Suspense fallback={<div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md h-96 flex items-center justify-center">Loading form...</div>}>
-              <SalespersonRegisterForm />
+              <FranchiseRegistrationWizard initialRole="salesperson" />
             </Suspense>
           </div>
         </div>

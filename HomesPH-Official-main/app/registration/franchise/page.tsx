@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import FranchiseRegisterForm from '@/components/auth/FranchiseRegisterForm'
+import FranchiseRegistrationWizard from '@/components/auth/FranchiseRegistrationWizard'
 import SiteFooter from '@/components/layout/SiteFooter'
 import SiteHeader from '@/components/layout/SiteHeader'
 import { getSiteSettings } from '@/lib/site-settings'
@@ -68,7 +68,7 @@ export default async function FranchiseRegisterPage() {
                 </div>
               }
             >
-              <FranchiseRegisterForm />
+              <FranchiseRegistrationWizard initialRole="franchise" />
             </Suspense>
           </div>
         </div>

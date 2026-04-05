@@ -41,6 +41,7 @@ interface FranchiseRegistrationInput extends BaseRegistrationInput {
   role: 'franchise'
   prcNumber?: string | null
   isCompanyLinked?: boolean
+  companyId?: number | null
   companyName?: string | null
   officeStreet?: string | null
   officeCity?: string | null
@@ -52,6 +53,7 @@ interface SalespersonRegistrationInput extends BaseRegistrationInput {
   role: 'salesperson'
   prcNumber?: string | null
   isCompanyLinked?: boolean
+  companyId?: number | null
   companyName?: string | null
   officeStreet?: string | null
   officeCity?: string | null
@@ -88,6 +90,31 @@ interface InvitationContext {
   invitedRole: RegistrationRole
 }
 
+type CompanyProfileRow = {
+  company_name: string | null
+  created_at: string | null
+  id: number
+  parent_company_id: number | null
+  user_profile_id: string | null
+}
+
+type CompanyAddressRow = {
+  city: string | null
+  company_id: number
+  full_address: string | null
+  street: string | null
+  zip_code: string | null
+}
+
+export interface RegistrationCompanySearchOption {
+  city: string | null
+  companyName: string
+  fullAddress: string | null
+  id: number
+  street: string | null
+  zipCode: string | null
+}
+
 function trimValue(value: string | null | undefined) {
   return value?.trim() ?? ''
 }
@@ -107,6 +134,30 @@ function getInitialPrcStatus(role: string, prcNumber: string | null) {
   }
 
   return prcNumber ? PRC_STATUS_PENDING_VERIFICATION : PRC_STATUS_NOT_SUBMITTED
+}
+
+function pickPreferredCompanyProfile(candidates: CompanyProfileRow[]) {
+  if (candidates.length === 0) {
+    return null
+  }
+
+  return [...candidates].sort((left, right) => {
+    const leftOwned = Boolean(left.user_profile_id)
+    const rightOwned = Boolean(right.user_profile_id)
+
+    if (leftOwned !== rightOwned) {
+      return leftOwned ? -1 : 1
+    }
+
+    const leftTime = left.created_at ? new Date(left.created_at).getTime() : Number.MAX_SAFE_INTEGER
+    const rightTime = right.created_at ? new Date(right.created_at).getTime() : Number.MAX_SAFE_INTEGER
+
+    if (leftTime !== rightTime) {
+      return leftTime - rightTime
+    }
+
+    return left.id - right.id
+  })[0] ?? null
 }
 
 async function deleteRegistrationProfileArtifacts(
@@ -413,6 +464,195 @@ async function markInvitationAccepted(
   }
 }
 
+export async function searchRegistrationCompaniesAction(query: string): Promise<RegistrationCompanySearchOption[]> {
+  const normalizedQuery = trimValue(query)
+  if (normalizedQuery.length < 2) {
+    return []
+  }
+
+  const admin = createAdminSupabaseClient()
+  const { data: companyRows, error: companyRowsError } = await admin
+    .from('company_profiles')
+    .select('id, company_name, parent_company_id, user_profile_id, created_at')
+    .is('parent_company_id', null)
+    .ilike('company_name', `%${normalizedQuery}%`)
+    .order('company_name', { ascending: true })
+    .limit(12)
+    .returns<CompanyProfileRow[]>()
+
+  if (companyRowsError) {
+    throw new Error(companyRowsError.message)
+  }
+
+  const groupedCompanies = new Map<string, CompanyProfileRow[]>()
+  for (const company of companyRows ?? []) {
+    const normalizedName = trimValue(company.company_name).toLowerCase()
+    if (!normalizedName) {
+      continue
+    }
+
+    const group = groupedCompanies.get(normalizedName) ?? []
+    group.push(company)
+    groupedCompanies.set(normalizedName, group)
+  }
+
+  const canonicalCompanies = [...groupedCompanies.values()]
+    .map((group) => pickPreferredCompanyProfile(group))
+    .filter((company): company is CompanyProfileRow => Boolean(company))
+    .sort((left, right) => trimValue(left.company_name).localeCompare(trimValue(right.company_name)))
+
+  const addressMap = new Map<number, CompanyAddressRow>()
+  const companyIds = canonicalCompanies.map((company) => company.id)
+
+  if (companyIds.length > 0) {
+    const { data: addressRows, error: addressRowsError } = await admin
+      .from('addresses')
+      .select('company_id, street, city, zip_code, full_address')
+      .in('company_id', companyIds)
+      .returns<CompanyAddressRow[]>()
+
+    if (addressRowsError) {
+      throw new Error(addressRowsError.message)
+    }
+
+    for (const address of addressRows ?? []) {
+      if (!addressMap.has(address.company_id)) {
+        addressMap.set(address.company_id, address)
+      }
+    }
+  }
+
+  return canonicalCompanies.map((company) => {
+    const address = addressMap.get(company.id)
+
+    return {
+      city: address?.city?.trim() || null,
+      companyName: trimValue(company.company_name),
+      fullAddress: address?.full_address?.trim() || null,
+      id: company.id,
+      street: address?.street?.trim() || null,
+      zipCode: address?.zip_code?.trim() || null,
+    }
+  })
+}
+
+async function ensureCompanyRegistrationLink(params: {
+  admin: ReturnType<typeof createAdminSupabaseClient>
+  companyId?: number | null
+  companyName?: string | null
+  officeCity?: string | null
+  officeStreet?: string | null
+  officeZip?: string | null
+  profileId: string
+  role: 'franchise' | 'salesperson'
+}) {
+  let companyId = params.companyId ?? null
+  const companyName = trimValue(params.companyName)
+
+  if (companyId) {
+    const { data: selectedCompany, error: selectedCompanyError } = await params.admin
+      .from('company_profiles')
+      .select('id, company_name')
+      .eq('id', companyId)
+      .maybeSingle<{ company_name: string | null; id: number }>()
+
+    if (selectedCompanyError) {
+      throw new Error(selectedCompanyError.message)
+    }
+
+    if (!selectedCompany?.id) {
+      throw new Error('The selected company could not be found anymore. Search again and choose the franchise one more time.')
+    }
+  }
+
+  if (!companyId && !companyName) {
+    return null
+  }
+
+  if (!companyId) {
+    const { data: exactMatches, error: exactMatchesError } = await params.admin
+      .from('company_profiles')
+      .select('id, company_name, parent_company_id, user_profile_id, created_at')
+      .ilike('company_name', companyName)
+      .is('parent_company_id', null)
+      .returns<CompanyProfileRow[]>()
+
+    if (exactMatchesError) {
+      throw new Error(exactMatchesError.message)
+    }
+
+    companyId = pickPreferredCompanyProfile(exactMatches ?? [])?.id ?? null
+  }
+
+  if (!companyId) {
+    const { data: createdCompany, error: createdCompanyError } = await params.admin
+      .from('company_profiles')
+      .insert({
+        company_name: companyName,
+        user_profile_id: params.role === 'franchise' ? params.profileId : null,
+      })
+      .select('id')
+      .single<{ id: number }>()
+
+    if (createdCompanyError) {
+      throw new Error(createdCompanyError.message)
+    }
+
+    companyId = createdCompany.id
+  }
+
+  const { error: membershipError } = await params.admin
+    .from('company_members')
+    .upsert(
+      {
+        company_id: companyId,
+        user_profile_id: params.profileId,
+        system_role: mapRoleToCompanySystemRole(params.role),
+      },
+      { onConflict: 'company_id,user_profile_id' },
+    )
+
+  if (membershipError) {
+    throw new Error(membershipError.message)
+  }
+
+  const street = trimToNull(params.officeStreet)
+  const city = trimToNull(params.officeCity)
+  const zipCode = trimToNull(params.officeZip)
+
+  if (street || city || zipCode) {
+    const { data: existingAddress, error: existingAddressError } = await params.admin
+      .from('addresses')
+      .select('id')
+      .eq('company_id', companyId)
+      .limit(1)
+      .maybeSingle<{ id: number }>()
+
+    if (existingAddressError) {
+      throw new Error(existingAddressError.message)
+    }
+
+    if (!existingAddress?.id) {
+      const fullAddress = [street, city, zipCode].filter(Boolean).join(', ')
+      const { error: addressError } = await params.admin.from('addresses').insert({
+        company_id: companyId,
+        label: 'Main Office',
+        street,
+        city,
+        country: 'Philippines',
+        zip_code: zipCode,
+        full_address: fullAddress || null,
+      })
+
+      if (addressError) {
+        throw new Error(addressError.message)
+      }
+    }
+  }
+
+  return companyId
+}
+
 export async function registerAccountAction(input: RegisterAccountInput): Promise<RegisterAccountResult> {
   const headersList = await headers()
   const origin = headersList.get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -446,8 +686,31 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
   const effectiveRole = normalizeRegistrationRole(invitation?.invitedRole ?? input.role)
   const fullName = buildFullName(fname, lname)
   const developerCompanyName = 'companyName' in input ? trimValue(input.companyName) : ''
+  const requestedCompanyId = 'companyId' in input ? input.companyId ?? null : null
   const requestedCompanyName = 'companyName' in input ? trimToNull(input.companyName) : null
   const requestedPrcNumber = 'prcNumber' in input ? trimToNull(input.prcNumber) : null
+
+  if (
+    (effectiveRole === 'franchise' || effectiveRole === 'salesperson') &&
+    'isCompanyLinked' in input &&
+    input.isCompanyLinked
+  ) {
+    if (!requestedCompanyId && !requestedCompanyName) {
+      return { success: false, message: 'Company-linked registration requires a company or office name.' }
+    }
+
+    if (!requestedCompanyId && (!trimToNull(input.officeStreet) || !trimToNull(input.officeCity))) {
+      return { success: false, message: 'Company-linked registration requires the office street and city.' }
+    }
+
+    if (effectiveRole === 'franchise' && requestedCompanyId) {
+      return {
+        success: false,
+        message:
+          'Franchise Partner registration is only for creating new offices. To join an existing office, please register as a Salesperson.',
+      }
+    }
+  }
 
   if (effectiveRole === 'developer' && !developerCompanyName) {
     return { success: false, message: 'Company / developer name is required.' }
@@ -581,16 +844,6 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
       await upsertDeveloperProfile(admin, profile.id, developerCompanyName)
     }
 
-    if ((effectiveRole === 'franchise' || effectiveRole === 'salesperson') && 'isCompanyLinked' in input) {
-      if (input.isCompanyLinked && input.companyName) {
-        const { error: compErr } = await admin.from('company_profiles').insert({
-          user_profile_id: profile.id,
-          company_name: trimValue(input.companyName),
-        })
-        if (compErr) console.error('Failed to create company_profile', compErr)
-      }
-    }
-
     // Always save the ID document for franchise/salesperson regardless of company link
     if ((effectiveRole === 'franchise' || effectiveRole === 'salesperson') && 'idUploadUrl' in input && input.idUploadUrl) {
       const fileName = input.idUploadUrl.split('/').pop() ?? 'id-document'
@@ -638,6 +891,22 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
         }, { onConflict: 'company_id,user_profile_id' })
         if (linkErr) throw new Error(`Unable to link this account to the referrer company. ${linkErr.message}`)
       }
+    } else if (
+      (effectiveRole === 'franchise' || effectiveRole === 'salesperson') &&
+      'isCompanyLinked' in input &&
+      input.isCompanyLinked &&
+      requestedCompanyName
+    ) {
+      await ensureCompanyRegistrationLink({
+        admin,
+        companyId: requestedCompanyId,
+        companyName: requestedCompanyName,
+        officeCity: input.officeCity,
+        officeStreet: input.officeStreet,
+        officeZip: input.officeZip,
+        profileId: profile.id,
+        role: effectiveRole,
+      })
     }
 
     await supabase.auth.signOut()

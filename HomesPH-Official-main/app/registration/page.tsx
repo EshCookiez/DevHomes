@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import RegistrationForm from '@/components/auth/RegistrationForm'
+import FranchiseRegistrationWizard from '@/components/auth/FranchiseRegistrationWizard'
 import RegistrationPageShell from '@/components/auth/RegistrationPageShell'
 
 export default async function RegistrationPage() {
@@ -12,7 +12,7 @@ export default async function RegistrationPage() {
           </div>
         }
       >
-        <RegistrationForm />
+        <FranchiseRegistrationWizard />
       </Suspense>
     </RegistrationPageShell>
   )
