@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import SiteHeader from '@/components/layout/SiteHeader'
 import SiteFooter from '@/components/layout/SiteFooter'
 import { getSiteSettings } from '@/lib/site-settings'
@@ -31,31 +30,22 @@ function getImage(article: ExternalArticle) {
   return article.image ?? ''
 }
 
-export default async function ArticleDetailPage({
+export default async function LocationArticleDetailPage({
   params,
-  searchParams,
 }: {
-  params: Promise<{ slug: string }>
-  searchParams: Promise<{ location?: string }>
+  params: Promise<{ location: string; slug: string }>
 }) {
   const { slug } = await params
-  const { location } = await searchParams
   const settings = await getSiteSettings()
-  
+
   let article: ExternalArticle | null = null
   let relatedArticles: ExternalArticle[] = []
   let latestStories: ExternalArticle[] = []
   let trendingStories: ExternalArticle[] = []
 
   try {
-    // Fetch the article from the real API
     article = await getArticleBySlug(slug)
 
-    // Redirect to city-prefixed URL if article has a city
-    if (article?.city_slug) {
-      redirect(`/${article.city_slug}/news/${slug}`)
-    }
-    
     if (!article) {
       return (
         <div className="min-h-screen bg-gray-50">
@@ -68,7 +58,7 @@ export default async function ArticleDetailPage({
           />
           <main className="mx-auto max-w-7xl px-4 py-20 text-center">
             <h1 className="text-4xl font-extrabold text-gray-950">Article not found</h1>
-            <p className="mt-4 text-gray-600">The article you're looking for doesn't exist.</p>
+            <p className="mt-4 text-gray-600">The article you&apos;re looking for doesn&apos;t exist.</p>
             <Link href="/news" className="mt-6 inline-block text-[#1428ae] font-bold hover:underline">
               ← Back to News
             </Link>
@@ -84,7 +74,6 @@ export default async function ArticleDetailPage({
       )
     }
 
-    // Fetch related articles: same category, excluding current article
     if (article) {
       const currentArticle = article
       try {
@@ -100,7 +89,6 @@ export default async function ArticleDetailPage({
         trendingStories = relatedArticles.slice(4, 8)
       } catch (err) {
         console.error('[ArticleDetail] Failed to fetch related articles:', err)
-        // Continue without related articles
         relatedArticles = []
       }
     }
@@ -117,7 +105,7 @@ export default async function ArticleDetailPage({
         />
         <main className="mx-auto max-w-7xl px-4 py-20 text-center">
           <h1 className="text-4xl font-extrabold text-gray-950">Article not found</h1>
-          <p className="mt-4 text-gray-600">The article you're looking for doesn't exist.</p>
+          <p className="mt-4 text-gray-600">The article you&apos;re looking for doesn&apos;t exist.</p>
           <Link href="/news" className="mt-6 inline-block text-[#1428ae] font-bold hover:underline">
             ← Back to News
           </Link>
@@ -133,8 +121,6 @@ export default async function ArticleDetailPage({
     )
   }
 
-
-  // Render content blocks from API
   const htmlContent = article.content_blocks ? renderContentBlocks(article.content_blocks) : null
   const image = getImage(article)
 
@@ -149,19 +135,15 @@ export default async function ArticleDetailPage({
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        {/* Header Section - above both columns */}
-        <ArticleHeader 
+        <ArticleHeader
           title={article.title}
           updatedTime={timeAgo(article.published_at)}
           author={article.author ?? 'HomesPH News Desk'}
           viewsCount={article.views_count}
         />
 
-        {/* Two Column Layout */}
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-          {/* Main Content */}
           <div className="space-y-8">
-            {/* Category + City label, then Featured Image */}
             {image && (
               <div>
                 {(article.category || article.city_name) && (
@@ -181,7 +163,6 @@ export default async function ArticleDetailPage({
               </div>
             )}
 
-            {/* Article Content - Render from content_blocks */}
             <div className="prose prose-lg max-w-none">
               {htmlContent ? (
                 <div
@@ -193,7 +174,6 @@ export default async function ArticleDetailPage({
                   }}
                 />
               ) : (
-                // Fallback to description/summary if no content blocks
                 <>
                   {article.summary && (
                     <p className="text-gray-700 leading-relaxed mb-4 text-lg font-semibold">
@@ -209,7 +189,6 @@ export default async function ArticleDetailPage({
               )}
             </div>
 
-            {/* Article Footer */}
             <div className="border-t border-gray-200 pt-6 flex items-center justify-between">
               <div>
                 <p className="text-gray-700 font-semibold">{article.author ?? 'HomesPH News Desk'}</p>
@@ -218,12 +197,9 @@ export default async function ArticleDetailPage({
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6 lg:pt-[50px]">
-            {/* Ad Banner */}
             <AdBanner sizes={['300x250']} />
 
-            {/* Latest Stories */}
             {latestStories.length > 0 && (
               <div>
                 <h3 className="text-xs font-black uppercase tracking-widest text-gray-700 mb-4">Latest Stories</h3>
@@ -253,7 +229,6 @@ export default async function ArticleDetailPage({
               </div>
             )}
 
-            {/* Trending */}
             {trendingStories.length > 0 && (
               <div>
                 <h3 className="text-xs font-black uppercase tracking-widest text-gray-700 mb-4">Trending</h3>
@@ -283,7 +258,6 @@ export default async function ArticleDetailPage({
               </div>
             )}
 
-            {/* Ad Banner Bottom */}
             <AdBanner sizes={['300x250']} />
           </div>
         </div>

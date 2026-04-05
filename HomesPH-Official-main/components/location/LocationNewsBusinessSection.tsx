@@ -14,6 +14,7 @@ import {
   type CarouselApi,
 } from '@/components/ui/carousel'
 import { buildNewsHref } from '@/lib/news-navigation'
+import { buildArticleHref } from '@/lib/article-href'
 import {
   LOCATION_EDITORIAL_BREAKOUT_CLASS,
   LOCATION_EDITORIAL_CONTENT_SHELL_CLASS,
@@ -38,6 +39,7 @@ interface NewsArticle {
   author?: string
   published_at: string
   tags?: string[]
+  city_slug?: string | null
 }
 
 interface BusinessFeature {
@@ -178,7 +180,7 @@ function LatestNewsCard({
 }) {
   return (
     <Link
-      href={article.slug ? `/news/${article.slug}` : buildNewsHref(locationName)}
+      href={article.slug ? buildArticleHref(article.slug, article.city_slug) : buildNewsHref(locationName)}
       className="group flex h-full min-w-0 flex-col overflow-hidden rounded-[24px] border border-[#e4ecf8] bg-white shadow-[0_14px_30px_rgba(15,39,78,0.06)] transition-[transform,box-shadow,border-color] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[2px] hover:border-[#d8e2f1] hover:shadow-[0_22px_44px_rgba(15,39,78,0.08)]"
     >
       <div className="relative h-[214px] overflow-hidden bg-[#e9eff8]">

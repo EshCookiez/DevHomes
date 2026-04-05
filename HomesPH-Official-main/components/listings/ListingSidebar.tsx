@@ -34,7 +34,7 @@ async function fetchLatestNews(): Promise<NewsItem[]> {
     return result.data.data.slice(0, 5).map(a => ({
       title: a.title,
       imageUrl: a.image || '',
-      href: `/news/${a.slug}`,
+      href: a.city_slug ? `/${a.city_slug}/news/${a.slug}` : `/news/${a.slug}`,
     }))
   } catch {
     return []

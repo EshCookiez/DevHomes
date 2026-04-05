@@ -5,6 +5,7 @@ import { GENERAL_NAV_ITEMS } from '@/lib/general-nav'
 import { getSiteSettings } from '@/lib/site-settings'
 import { MOCK_LOCATIONS } from '@/lib/mock-data'
 import { getArticles as getArticlesFromAPI } from '@/lib/hybrid-articles'
+import { buildArticleHref } from '@/lib/article-href'
 
 interface TourismArticle {
   id: string | number
@@ -19,6 +20,7 @@ interface TourismArticle {
   location?: string
   published_at: string
   tags?: string[]
+  city_slug?: string | null
 }
 
 async function getTourismArticles(): Promise<TourismArticle[]> {
@@ -41,6 +43,7 @@ async function getTourismArticles(): Promise<TourismArticle[]> {
       location: article.location || article.city_name || '',
       published_at: article.published_at,
       tags: article.topics ?? [],
+      city_slug: article.city_slug || null,
     }))
   } catch (error) {
     console.error('[Tourism] Failed to fetch tourism articles:', error)
@@ -123,7 +126,7 @@ export default async function TourismPage({
         {filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map(article => (
-              <Link key={article.id} href={`/news/${article.slug}`}
+              <Link key={article.id} href={buildArticleHref(article.slug, article.city_slug)}
                 className="group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg hover:border-[#1428ae]/20 transition-all">
                 <div className="h-52 overflow-hidden bg-gray-100 relative">
                   {(article.image_url || article.image) && (

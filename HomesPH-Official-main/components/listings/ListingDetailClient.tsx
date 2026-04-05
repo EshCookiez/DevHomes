@@ -663,7 +663,7 @@ export default function ListingDetailClient({
                       <div key={article.id ?? idx}>
                         {idx > 0 && <div className="h-px bg-[#D0D0D0] my-5" />}
                         <a
-                          href={article.slug ? `/news/${article.slug}` : '#'}
+                          href={article.slug ? (article.city_slug ? `/${article.city_slug}/news/${article.slug}` : `/news/${article.slug}`) : '#'}
                           onMouseEnter={() => setHoveredNewsIdx(idx)}
                           onMouseLeave={() => setHoveredNewsIdx(null)}
                           style={{

@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { useRef, useEffect, useState } from 'react'
+import { buildArticleHref } from '@/lib/article-href'
 
 interface TickerItem {
   title: string
   slug: string
+  city_slug?: string | null
 }
 
 interface NewsTickerProps {
@@ -22,7 +24,7 @@ function TickerLink({ item }: { item: TickerItem }) {
 
   return (
     <Link
-      href={`/news/${item.slug}`}
+      href={buildArticleHref(item.slug, item.city_slug)}
       className="text-[14px] sm:text-[16px] md:text-[18px] font-normal whitespace-nowrap transition-colors duration-200"
       style={{ fontFamily: 'Outfit', color: hovered ? '#F4AA1D' : '#FFFFFF' }}
       onMouseEnter={() => setHovered(true)}

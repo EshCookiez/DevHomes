@@ -8,6 +8,7 @@ import { formatLocationForNews } from '@/lib/news-navigation'
 import { getArticles as getArticlesFromAPI } from '@/lib/hybrid-articles'
 import { NewsTicker } from '@/components/news/NewsTicker'
 import AdBanner from '@/components/ui/AdBanner'
+import { buildArticleHref } from '@/lib/article-href'
 
 interface Article {
   id: number | string
@@ -26,6 +27,7 @@ interface Article {
   topics?: string[]
   location?: string
   city?: string | null
+  city_slug?: string | null
   is_live?: boolean
   views_count?: number
 }
@@ -205,7 +207,7 @@ function extractArticleCollection(payload: unknown): ArticleCollection {
   }
 }
 
-// ── Image helper ──────────────────────────────────────────────────────────────
+// â”€â”€ Image helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function NewsImage({ article, className }: { article: Article; className: string }) {
   const image = getImage(article)
   if (!image) {
@@ -214,12 +216,12 @@ function NewsImage({ article, className }: { article: Article; className: string
   return <img src={image} alt={article.title} className={`${className} object-cover`} />
 }
 
-// ── Left column (295px) ───────────────────────────────────────────────────────
+// â”€â”€ Left column (295px) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLatest: Article[] }) {
   return (
     <div className="flex flex-col gap-0">
       {leadStory ? (
-        <Link href={`/news/${leadStory.slug}`} className="group block overflow-hidden mb-5">
+        <Link href={buildArticleHref(leadStory.slug, leadStory.city_slug)} className="group block overflow-hidden mb-5">
           <div className="relative w-full overflow-hidden rounded-[10px] bg-[#D9D9D9]" style={{ height: 181 }}>
             <NewsImage article={leadStory} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
           </div>
@@ -236,7 +238,7 @@ function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLate
       <div className="space-y-4">
         {localLatest.slice(0, 5).map((article, index) => (
           <div key={article.id}>
-            <Link href={`/news/${article.slug}`} className="group block">
+            <Link href={buildArticleHref(article.slug, article.city_slug)} className="group block">
               <p className="text-left line-clamp-2 text-base font-bold transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
                 {article.title}
               </p>
@@ -249,7 +251,7 @@ function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLate
   )
 }
 
-// ── Middle column (677px) ─────────────────────────────────────────────────────
+// â”€â”€ Middle column (677px) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadRest?: Article[] }) {
   const textArticle = leadRest[0]
   const gridArticles = leadRest.slice(1, 4)
@@ -257,7 +259,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
   return (
     <div className="flex flex-col gap-0">
       {leadStory ? (
-        <Link href={`/news/${leadStory.slug}`} className="group block overflow-hidden">
+        <Link href={buildArticleHref(leadStory.slug, leadStory.city_slug)} className="group block overflow-hidden">
           <div className="relative overflow-hidden rounded-[15px] bg-[#D9D9D9]" style={{ height: 328 }}>
             <NewsImage article={leadStory} className="w-full h-full transition-transform duration-700 group-hover:scale-105" />
             {/* Bottom gradient */}
@@ -293,7 +295,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
       <div className="border-b border-[#D0D0D0] mb-4" />
 
       {textArticle ? (
-        <Link href={`/news/${textArticle.slug}`} className="group block mb-4">
+        <Link href={buildArticleHref(textArticle.slug, textArticle.city_slug)} className="group block mb-4">
           <p
             className="line-clamp-2 font-[300] text-[18px] leading-[18px] group-hover:text-[#1428ae] transition-colors"
             style={{ fontFamily: 'Outfit', color: '#002143' }}
@@ -307,7 +309,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {gridArticles.map(article => (
             <div key={article.id} className="flex flex-col gap-2">
-              <Link href={`/news/${article.slug}`} className="group block">
+              <Link href={buildArticleHref(article.slug, article.city_slug)} className="group block">
                 <div className="overflow-hidden rounded-[5px] bg-[#D9D9D9]" style={{ height: 126 }}>
                   <NewsImage article={article} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
                 </div>
@@ -319,7 +321,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
                 </p>
               </Link>
               <Link
-                href={`/news/${article.slug}`}
+                href={buildArticleHref(article.slug, article.city_slug)}
                 className="inline-block font-[400] text-[12px] leading-[12px] hover:opacity-70 transition-opacity"
                 style={{ fontFamily: 'Outfit', color: '#1428AE' }}
               >
@@ -333,7 +335,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
   )
 }
 
-// ── Right column (295px) ──────────────────────────────────────────────────────
+// â”€â”€ Right column (295px) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function RightColumn({ leadRest }: { leadRest: Article[] }) {
   const featured = leadRest[3]
   const catchUpItems = leadRest.slice(4, 7)
@@ -341,7 +343,7 @@ function RightColumn({ leadRest }: { leadRest: Article[] }) {
   return (
     <div className="flex flex-col gap-0">
       {featured ? (
-        <Link href={`/news/${featured.slug}`} className="group block overflow-hidden mb-5">
+        <Link href={buildArticleHref(featured.slug, featured.city_slug)} className="group block overflow-hidden mb-5">
           <div className="relative w-full overflow-hidden rounded-[10px] bg-[#D9D9D9]" style={{ height: 181 }}>
             <NewsImage article={featured} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
           </div>
@@ -364,7 +366,7 @@ function RightColumn({ leadRest }: { leadRest: Article[] }) {
         <div className="space-y-0">
           {catchUpItems.map((article, index) => (
             <div key={article.id}>
-              <Link href={`/news/${article.slug}`} className="group flex gap-3 items-start">
+              <Link href={buildArticleHref(article.slug, article.city_slug)} className="group flex gap-3 items-start">
                 <div className="shrink-0 overflow-hidden rounded-[5px] bg-[#D9D9D9]" style={{ width: 128, height: 79 }}>
                   <NewsImage article={article} className="w-full h-full" />
                 </div>
@@ -410,6 +412,7 @@ async function fetchArticleCollection(location?: string, page = 1, limit = 40): 
       topics: article.topics,
       location: article.location || article.city_name,
       city: article.city_name || null,
+      city_slug: article.city_slug || null,
       is_live: true,
       views_count: article.views_count,
     })) as Article[]
@@ -511,11 +514,11 @@ export default async function NewsPage({
         socialLinks={settings.socialLinks}
       />
 
-      {/* ── News Ticker Bar ──────────────────────────────────────────── */}
-      <NewsTicker items={allArticles.slice(0, 12).map(a => ({ title: a.title, slug: a.slug }))} />
+      {/* â”€â”€ News Ticker Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <NewsTicker items={allArticles.slice(0, 12).map(a => ({ title: a.title, slug: a.slug, city_slug: a.city_slug }))} />
 
       <main className="w-full bg-white">
-        {/* ── 3-Column Hero Section ───────────────────────────────────── */}
+        {/* â”€â”€ 3-Column Hero Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] pt-8 pb-0">
           {cityArticles.length === 0 ? (
             <div className="py-28 text-center">
@@ -541,12 +544,12 @@ export default async function NewsPage({
           )}
         </div>
 
-        {/* ── Ad Space ────────────────────────────────────────────────── */}
+        {/* â”€â”€ Ad Space â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] mt-10">
           <AdBanner />
         </div>
 
-        {/* ── Location Latest Updates ──────────────────────────────────── */}
+        {/* â”€â”€ Location Latest Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] mt-10">
           <h2
             className="font-[500] text-[35px] leading-[35px] mb-6"
@@ -560,7 +563,7 @@ export default async function NewsPage({
             {cityArticles.slice(0, 12).map(article => (
               <Link
                 key={article.id}
-                href={`/news/${article.slug}`}
+                href={buildArticleHref(article.slug, article.city_slug)}
                 className="group flex flex-col overflow-hidden rounded-[15px] bg-white transition-shadow hover:shadow-lg"
                 style={{ boxShadow: '0px 1px 5px rgba(0,0,0,0.15)' }}
               >
@@ -611,7 +614,7 @@ export default async function NewsPage({
           </div>
         </div>
 
-        {/* ── Areas Section ────────────────────────────────────────────── */}
+        {/* â”€â”€ Areas Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 xl:px-[120px] 2xl:px-[296px] mt-10 pb-10">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <span

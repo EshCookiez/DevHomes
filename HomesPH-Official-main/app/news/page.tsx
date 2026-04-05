@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import SiteHeader from '@/components/layout/SiteHeader'
@@ -13,6 +13,8 @@ import { RealEstateNewsSection } from '@/components/news/RealEstateNewsSection'
 import { OFWNewsSection } from '@/components/news/OFWNewsSection'
 import { PhilippineTourismSection } from '@/components/news/PhilippineTourismSection'
 import { NewsTicker } from '@/components/news/NewsTicker'
+import { SubscribeToNews } from '@/components/news/subscribe/SubscribeToNews'
+import { buildArticleHref } from '@/lib/article-href'
 
 interface Article {
   id: number | string
@@ -31,6 +33,7 @@ interface Article {
   topics?: string[]
   location?: string
   city?: string | null
+  city_slug?: string | null
   is_live?: boolean
   views_count?: number
 }
@@ -194,12 +197,12 @@ function StoryImage({ article, className }: { article: Article; className: strin
   return <img src={image} alt={article.title} className={className} />
 }
 
-/* ── Hero Left Column ── */
+/* â”€â”€ Hero Left Column â”€â”€ */
 function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLatest: Article[] }) {
   return (
     <div className="w-[295px]">
       {leadStory ? (
-        <Link href={`/news/${leadStory.slug}`} className="group block overflow-hidden">
+        <Link href={buildArticleHref(leadStory.slug, leadStory.city_slug)} className="group block overflow-hidden">
           <div className="relative w-[293px] h-[181px] mx-auto overflow-hidden rounded-[10px] bg-[#D9D9D9]">
             <StoryImage article={leadStory} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
           </div>
@@ -213,7 +216,7 @@ function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLate
         {localLatest.slice(0, 5).map((article) => (
           <div key={article.id}>
             <div className="w-[295px] h-[1px] bg-[#D0D0D0] mb-[13px]" />
-            <Link href={`/news/${article.slug}`} className="group block mb-[13px]">
+            <Link href={buildArticleHref(article.slug, article.city_slug)} className="group block mb-[13px]">
               <p className="text-left line-clamp-3 text-[18px] font-light leading-[22px] transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
                 {article.title}
               </p>
@@ -225,7 +228,7 @@ function LeftColumn({ leadStory, localLatest }: { leadStory?: Article; localLate
   )
 }
 
-/* ── Hero Middle Column ── */
+/* â”€â”€ Hero Middle Column â”€â”€ */
 function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadRest?: Article[] }) {
   const textArticle = leadRest[0]
   const secondArticle = leadRest[1]
@@ -234,7 +237,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
   return (
     <div>
       {leadStory ? (
-        <Link href={`/news/${leadStory.slug}`} className="group block overflow-hidden">
+        <Link href={buildArticleHref(leadStory.slug, leadStory.city_slug)} className="group block overflow-hidden">
           <div className="relative w-full h-[328px] overflow-hidden rounded-[15px] bg-[#D9D9D9]">
             <StoryImage article={leadStory} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
             <div className="absolute inset-x-0 bottom-0 h-[184px] rounded-b-[15px]" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, #000000 100%)' }} />
@@ -255,7 +258,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
 
       {/* Text headline below hero image */}
       {textArticle ? (
-        <Link href={`/news/${textArticle.slug}`} className="group block mt-[15px]">
+        <Link href={buildArticleHref(textArticle.slug, textArticle.city_slug)} className="group block mt-[15px]">
           <p className="text-left text-[20px] font-medium leading-[28px] transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
             {textArticle.title}
           </p>
@@ -265,7 +268,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
       <div className="w-full h-[1px] bg-[#D0D0D0] mt-[15px] mb-[15px]" />
 
       {secondArticle ? (
-        <Link href={`/news/${secondArticle.slug}`} className="group block mb-[15px]">
+        <Link href={buildArticleHref(secondArticle.slug, secondArticle.city_slug)} className="group block mb-[15px]">
           <p className="text-left text-[18px] font-light leading-[18px] transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
             {secondArticle.title}
           </p>
@@ -278,7 +281,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
           <div className="grid gap-[20px] grid-cols-3">
             {gridArticles.map(article => (
               <div key={article.id}>
-                <Link href={`/news/${article.slug}`} className="group block">
+                <Link href={buildArticleHref(article.slug, article.city_slug)} className="group block">
                   <div className="relative h-[126px] overflow-hidden rounded-[5px] bg-[#D9D9D9]">
                     <StoryImage article={article} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   </div>
@@ -286,7 +289,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
                     {article.title}
                   </p>
                 </Link>
-                <Link href={`/news/${article.slug}`} className="inline-block mt-[6px] text-[12px] font-normal leading-[12px] transition-colors hover:underline" style={{ fontFamily: 'Outfit', color: '#1428AE' }}>
+                <Link href={buildArticleHref(article.slug, article.city_slug)} className="inline-block mt-[6px] text-[12px] font-normal leading-[12px] transition-colors hover:underline" style={{ fontFamily: 'Outfit', color: '#1428AE' }}>
                   READ MORE
                 </Link>
               </div>
@@ -298,7 +301,7 @@ function MiddleColumn({ leadStory, leadRest = [] }: { leadStory?: Article; leadR
   )
 }
 
-/* ── Hero Right Column ── */
+/* â”€â”€ Hero Right Column â”€â”€ */
 function RightColumn({ leadRest }: { leadRest: Article[] }) {
   const featured = leadRest[5]
   const catchUpItems = leadRest.slice(6, 9)
@@ -306,7 +309,7 @@ function RightColumn({ leadRest }: { leadRest: Article[] }) {
   return (
     <div className="w-[295px]">
       {featured ? (
-        <Link href={`/news/${featured.slug}`} className="group block overflow-hidden">
+        <Link href={buildArticleHref(featured.slug, featured.city_slug)} className="group block overflow-hidden">
           <div className="relative w-[293px] h-[181px] mx-auto overflow-hidden rounded-[10px] bg-[#D9D9D9]">
             <StoryImage article={featured} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
           </div>
@@ -325,7 +328,7 @@ function RightColumn({ leadRest }: { leadRest: Article[] }) {
       <div>
         {catchUpItems.map((article, index) => (
           <div key={article.id}>
-            <Link href={`/news/${article.slug}`} className="group flex gap-[9px]">
+            <Link href={buildArticleHref(article.slug, article.city_slug)} className="group flex gap-[9px]">
               <div className="h-[79px] w-[128px] shrink-0 overflow-hidden rounded-[5px] bg-[#D9D9D9]">
                 <StoryImage article={article} className="h-full w-full object-cover" />
               </div>
@@ -346,7 +349,7 @@ function RightColumn({ leadRest }: { leadRest: Article[] }) {
   )
 }
 
-/* ── More Top Stories Section ── */
+/* â”€â”€ More Top Stories Section â”€â”€ */
 function MoreTopStoriesSection({ articles }: { articles: Article[] }) {
   const featured = articles[0]
   const listArticles = articles.slice(1, 6)
@@ -354,7 +357,7 @@ function MoreTopStoriesSection({ articles }: { articles: Article[] }) {
   return (
     <div>
       {featured ? (
-        <Link href={`/news/${featured.slug}`} className="group block mb-[15px]">
+        <Link href={buildArticleHref(featured.slug, featured.city_slug)} className="group block mb-[15px]">
           <div className="relative h-[181px] overflow-hidden rounded-[15px] bg-[#D9D9D9]">
             <StoryImage article={featured} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
           </div>
@@ -368,7 +371,7 @@ function MoreTopStoriesSection({ articles }: { articles: Article[] }) {
         {listArticles.map((article) => (
           <div key={article.id}>
             <div className="h-[1px] bg-[#D0D0D0] mb-[10px]" />
-            <Link href={`/news/${article.slug}`} className="group block mb-[10px]">
+            <Link href={buildArticleHref(article.slug, article.city_slug)} className="group block mb-[10px]">
               <p className="text-left line-clamp-3 text-[18px] font-light leading-[22px] transition-colors group-hover:text-[#1428ae]" style={{ fontFamily: 'Outfit', color: '#002143' }}>
                 {article.title}
               </p>
@@ -380,7 +383,7 @@ function MoreTopStoriesSection({ articles }: { articles: Article[] }) {
   )
 }
 
-/* ── Real Estate & Properties Center Column ── */
+/* â”€â”€ Real Estate & Properties Center Column â”€â”€ */
 function RealEstatePropertiesSection({ articles }: { articles: Article[] }) {
   const featured = articles[0]
   const subArticles = articles.slice(1, 3)
@@ -388,7 +391,7 @@ function RealEstatePropertiesSection({ articles }: { articles: Article[] }) {
   return (
     <div>
       {featured ? (
-        <Link href={`/news/${featured.slug}`} className="group block mb-4">
+        <Link href={buildArticleHref(featured.slug, featured.city_slug)} className="group block mb-4">
           <div className="relative h-[401px] overflow-hidden rounded-[15px] bg-[#D9D9D9]">
             <StoryImage article={featured} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
             <div className="absolute inset-x-0 bottom-0 h-[321px]" style={{ background: 'linear-gradient(180deg, rgba(217,217,217,0) 3.27%, #000000 100%)' }} />
@@ -408,7 +411,7 @@ function RealEstatePropertiesSection({ articles }: { articles: Article[] }) {
 
       {subArticles.map((article) => (
         <div key={article.id} className="mb-[14px]">
-          <Link href={`/news/${article.slug}`} className="group flex gap-[10px]">
+          <Link href={buildArticleHref(article.slug, article.city_slug)} className="group flex gap-[10px]">
             <div className="h-[79px] w-[129px] shrink-0 overflow-hidden rounded-[5px] bg-[#D9D9D9]">
               <StoryImage article={article} className="h-full w-full object-cover" />
             </div>
@@ -425,7 +428,7 @@ function RealEstatePropertiesSection({ articles }: { articles: Article[] }) {
   )
 }
 
-/* ── Philippine Latest Sidebar ── */
+/* â”€â”€ Philippine Latest Sidebar â”€â”€ */
 function PhilippineLatestSidebar({ articles }: { articles: Article[] }) {
   const items = articles.slice(0, 3)
 
@@ -433,7 +436,7 @@ function PhilippineLatestSidebar({ articles }: { articles: Article[] }) {
     <div>
       {items.map((article, index) => (
         <div key={article.id}>
-          <Link href={`/news/${article.slug}`} className="group flex gap-[8px]">
+          <Link href={buildArticleHref(article.slug, article.city_slug)} className="group flex gap-[8px]">
             <div className="h-[79px] w-[129px] shrink-0 overflow-hidden rounded-[5px] bg-[#D9D9D9]">
               <StoryImage article={article} className="h-full w-full object-cover" />
             </div>
@@ -478,6 +481,7 @@ async function getArticles(location?: string): Promise<Article[]> {
       topics: article.topics,
       location: article.location || article.city_name,
       city: article.city_name || null,
+      city_slug: article.city_slug || null,
       is_live: true,
       views_count: article.views_count,
     })) as Article[]
@@ -517,7 +521,7 @@ export default async function NewsPage({
 
   const [leadStory, ...leadRest] = leadFeed
   const localLatest = leadRest.slice(0, 5)
-  const tickerItems = allArticles.slice(0, 12).map(a => ({ title: a.title, slug: a.slug }))
+  const tickerItems = allArticles.slice(0, 12).map(a => ({ title: a.title, slug: a.slug, city_slug: a.city_slug }))
   const tickerData = tickerItems.length > 0
     ? tickerItems
     : TICKER_FALLBACKS.map(t => ({ title: t, slug: '#' }))
@@ -540,11 +544,11 @@ export default async function NewsPage({
         navItems={GENERAL_NAV_ITEMS}
       />
 
-      {/* ── TICKER BAR ── */}
+      {/* â”€â”€ TICKER BAR â”€â”€ */}
       <NewsTicker items={tickerData} />
 
       <main className="w-full bg-white">
-        {/* ── HERO 3-COLUMN SECTION ── */}
+        {/* â”€â”€ HERO 3-COLUMN SECTION â”€â”€ */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[120px] 2xl:px-[230px] py-8">
           {allArticles.length === 0 ? (
             <div className="py-28 text-center text-gray-400">
@@ -561,6 +565,9 @@ export default async function NewsPage({
                 </div>
               </div>
 
+              {/* ── Subscribe to News ── */}
+              <SubscribeToNews />
+
               {/* ── ADS SPACE ── */}
               <div className="mt-10">
                 <AdBanner />
@@ -569,20 +576,20 @@ export default async function NewsPage({
           )}
         </div>
 
-        {/* ── CAROUSEL SECTIONS ── */}
+        {/* â”€â”€ CAROUSEL SECTIONS â”€â”€ */}
         <div className="mt-2 space-y-[43px]">
           <RealEstateNewsSection articles={allArticles} />
           <OFWNewsSection articles={allArticles} />
           <PhilippineTourismSection articles={allArticles} />
         </div>
 
-        {/* ── MOST READ ── */}
+        {/* â”€â”€ MOST READ â”€â”€ */}
         {topViewed.length > 0 && (
           <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[230px] mt-10 mb-6">
             <h2 className="text-[22px] font-medium text-[#1428AE] mb-[18px]" style={{ fontFamily: 'Outfit' }}>Most Read This Week</h2>
             <div className="grid gap-[20px] grid-cols-2 md:grid-cols-4">
               {topViewed.slice(0, 4).map((article, index) => (
-                <Link key={article.id} href={`/news/${article.slug}`} className="group flex gap-[10px] items-start">
+                <Link key={article.id} href={buildArticleHref(article.slug, article.city_slug)} className="group flex gap-[10px] items-start">
                   <span className="text-[32px] font-medium leading-none shrink-0" style={{ fontFamily: 'Outfit', color: '#E0E4F8' }}>
                     {index + 1}
                   </span>
@@ -600,7 +607,7 @@ export default async function NewsPage({
           </div>
         )}
 
-        {/* ── AREAS SECTION ── */}
+        {/* â”€â”€ AREAS SECTION â”€â”€ */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[230px] mt-10 mb-6">
           <div className="flex items-baseline flex-wrap">
             <span className="text-[18px] font-medium text-[#1428AE] shrink-0" style={{ fontFamily: 'Outfit' }}>Areas:</span>
@@ -631,12 +638,12 @@ export default async function NewsPage({
           </div>
         </div>
 
-        {/* ── ADS SPACE 2 ── */}
+        {/* â”€â”€ ADS SPACE 2 â”€â”€ */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[230px] mb-10">
           <AdBanner />
         </div>
 
-        {/* ── MORE TOP STORIES + REAL ESTATE & PROPERTIES + PHILIPPINE LATEST ── */}
+        {/* â”€â”€ MORE TOP STORIES + REAL ESTATE & PROPERTIES + PHILIPPINE LATEST â”€â”€ */}
         {allArticles.length > 8 && (
           <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[230px] mb-10">
             <div className="grid gap-[42px] grid-cols-1 md:grid-cols-[295px_1fr_295px] w-full">
@@ -670,7 +677,7 @@ export default async function NewsPage({
           </div>
         )}
 
-        {/* ── HOMES.PH SHORTS ── */}
+        {/* â”€â”€ HOMES.PH SHORTS â”€â”€ */}
         {allArticles.length > 30 && (
           <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[230px] mb-10">
             <h2 className="text-[40px] font-medium leading-[40px] text-[#1428AE] mb-[20px]" style={{ fontFamily: 'Outfit' }}>
@@ -678,7 +685,7 @@ export default async function NewsPage({
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-[26px]">
               {shortsArticles.map(article => (
-                <Link key={article.id} href={`/news/${article.slug}`} className="group block">
+                <Link key={article.id} href={buildArticleHref(article.slug, article.city_slug)} className="group block">
                   <div className="relative h-[600px] overflow-hidden rounded-[5px] bg-[#D9D9D9]">
                     <StoryImage article={article} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   </div>
@@ -688,7 +695,7 @@ export default async function NewsPage({
           </div>
         )}
 
-        {/* ── LATEST NEWS DARK SECTION ── */}
+        {/* â”€â”€ LATEST NEWS DARK SECTION â”€â”€ */}
         {allArticles.length > 14 && (
           <div className="w-full bg-[#002143] pt-[66px] pb-[98px]">
             <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[230px]">
@@ -700,7 +707,7 @@ export default async function NewsPage({
                 {/* Left: Large featured image */}
                 {latestNewsArticles[0] ? (
                   <div>
-                    <Link href={`/news/${latestNewsArticles[0].slug}`} className="group block">
+                    <Link href={buildArticleHref(latestNewsArticles[0].slug, latestNewsArticles[0].city_slug)} className="group block">
                       <div className="relative h-[559px] overflow-hidden rounded-[15px] bg-[#D9D9D9]">
                         <StoryImage article={latestNewsArticles[0]} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                         <div className="absolute inset-x-0 bottom-0 h-[282px]" style={{ background: 'linear-gradient(180deg, rgba(217,217,217,0) 21.4%, #000000 100%)' }} />
@@ -724,7 +731,7 @@ export default async function NewsPage({
                 <div className="flex flex-col justify-between lg:h-[559px] overflow-hidden">
                   {latestNewsArticles.slice(1, 8).map((article, index) => (
                     <div key={article.id}>
-                      <Link href={`/news/${article.slug}`} className="group block">
+                      <Link href={buildArticleHref(article.slug, article.city_slug)} className="group block">
                         <p className="text-[18px] font-light leading-[22px] text-white transition-colors group-hover:text-blue-300 line-clamp-2" style={{ fontFamily: 'Outfit' }}>
                           {article.title}
                         </p>
