@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { Icon } from '@iconify/react'
 import { SubscribeModal } from './SubscribeModal'
 
-export function SubscribeToNews() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+export function SubscribeToNews({ autoOpen = false }: { autoOpen?: boolean }) {
+  const [isModalOpen, setIsModalOpen] = useState(autoOpen)
 
   return (
     <>

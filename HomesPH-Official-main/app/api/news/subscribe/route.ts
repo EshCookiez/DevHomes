@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BASE_URL = process.env.HOMESPH_NEWS_BASE_URL!
-const API_KEY = process.env.HOMESPH_NEWS_API_KEY!
+const BASE_URL = process.env.NEXT_PUBLIC_EXTERNAL_API_URL
+const API_KEY = process.env.HOMESPH_NEWS_API_KEY
 
 export async function POST(request: NextRequest) {
+  // Check if environment variables are set
+  if (!BASE_URL || !API_KEY) {
+    console.error('Missing environment variables:', {
+      BASE_URL: !!BASE_URL,
+      API_KEY: !!API_KEY,
+    })
+    return NextResponse.json(
+      { error: 'Server configuration error. Please contact support.' },
+      { status: 500 }
+    )
+  }
+
   const contentType = request.headers.get('content-type') ?? ''
 
   try {
@@ -12,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (contentType.includes('multipart/form-data')) {
       // Forward multipart bodies (includes optional logo file upload) as-is
       const formData = await request.formData()
-      upstreamRes = await fetch(`${BASE_URL}/subscribe`, {
+      upstreamRes = await fetch(`${BASE_URL}/external/subscribe`, {
         method: 'POST',
         headers: { 'X-Site-Key': API_KEY },
         body: formData,
@@ -32,7 +44,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'At least one country is required.' }, { status: 400 })
       }
 
-      upstreamRes = await fetch(`${BASE_URL}/subscribe`, {
+      upstreamRes = await fetch(`${BASE_URL}/external/subscribe`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -45,6 +57,7 @@ export async function POST(request: NextRequest) {
 
     if (!upstreamRes.ok) {
       const text = await upstreamRes.text()
+      console.error(`Subscribe upstream error: ${upstreamRes.status}`, text.substring(0, 200))
       return NextResponse.json(
         { error: `Upstream error: ${upstreamRes.status}`, detail: text.substring(0, 200) },
         { status: upstreamRes.status }
@@ -54,6 +67,7 @@ export async function POST(request: NextRequest) {
     const data = await upstreamRes.json()
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
+    console.error('Subscribe error:', err)
     return NextResponse.json(
       { error: 'Failed to subscribe', detail: (err as Error).message },
       { status: 500 }

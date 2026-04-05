@@ -1,6 +1,23 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* ── Nav link hover effect ─────────────────────────────────── */
+.nav-link-hover {
+  position: relative;
+}
+.nav-link-hover:hover::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: -12px;
+  right: -12px;
+  top: -8px;
+  bottom: -8px;
+  background-color: #FDF8EF;
+  border-radius: 8px;
+  opacity: 0.6;
+}
+
 @keyframes marquee-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }

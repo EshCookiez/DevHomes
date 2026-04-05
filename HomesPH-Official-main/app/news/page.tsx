@@ -566,7 +566,7 @@ export default async function NewsPage({
               </div>
 
               {/* ── Subscribe to News ── */}
-              <SubscribeToNews />
+              <SubscribeToNews autoOpen />
 
               {/* ── ADS SPACE ── */}
               <div className="mt-10">

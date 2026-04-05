@@ -271,20 +271,6 @@ export default function SiteHeader({
                       }} />
                     )}
                     {item.label}
-                    <style jsx>{`
-                      .nav-link-item:hover::before {
-                        content: '';
-                        position: absolute;
-                        z-index: -1;
-                        left: -12px;
-                        right: -12px;
-                        top: -8px;
-                        bottom: -8px;
-                        background-color: #FDF8EF;
-                        border-radius: 8px;
-                        opacity: 0.6;
-                      }
-                    `}</style>
                   </Link>
                 )
               })}
