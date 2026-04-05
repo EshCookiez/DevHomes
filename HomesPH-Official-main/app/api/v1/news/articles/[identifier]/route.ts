@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const API_BASEURL =
-  process.env.NEXT_PUBLIC_EXTERNAL_API_URL || 'http://127.0.0.1:8000/api'
+  process.env.NEXT_PUBLIC_EXTERNAL_API_URL || 'https://homesphnews-api-394504332858.asia-southeast1.run.app/api'
 const API_KEY = process.env.HOMESPH_NEWS_API_KEY || ''
 
 export async function GET(

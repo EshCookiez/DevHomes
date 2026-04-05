@@ -47,18 +47,38 @@ async function fetchNewsFromProxy<T = any>(
 
   // Only use full URL on server-side (typeof window === 'undefined')
   if (typeof window === 'undefined') {
-    // Server-side rendering: use localhost for development, NEXT_PUBLIC_SITE_URL for production
-    const isProduction = process.env.NODE_ENV === 'production'
-    if (isProduction) {
-      baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    } else {
-      // Development: always use localhost
-      baseUrl = 'http://localhost:3000'
+    // During server-side rendering, we can bypass our own proxy route
+    // and talk directly to the external API, avoiding "localhost" or VERCEL_URL issues!
+    const API_BASEURL = process.env.NEXT_PUBLIC_EXTERNAL_API_URL || 'https://homesphnews-api-394504332858.asia-southeast1.run.app/api'
+    const API_KEY = process.env.HOMESPH_NEWS_API_KEY || ''
+    
+    // endpoint here looks like "/articles?city_slug=cebu&per_page=40"
+    const externalUrl = `${API_BASEURL}/external${endpoint}`
+    
+    try {
+      const response = await fetch(externalUrl, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Site-Key': API_KEY,
+          'Accept': 'application/json',
+          ...options.headers,
+        },
+        cache: 'no-store' // Avoid stale build-time data missing API keys
+      })
+
+      if (!response.ok) {
+        throw new Error(`Direct News API Error: ${response.status}`)
+      }
+      return await response.json()
+    } catch (error) {
+      console.warn(`[News SSR] Failed direct fetch to ${externalUrl}:`, error)
+      throw error
     }
   }
-  // Client-side: use relative URL (empty string)
 
-  const url = `${baseUrl}/api/v1/news${endpoint}`
+  // Client-side: use relative URL to our proxy route
+  const url = `/api/v1/news${endpoint}`
 
   try {
     const response = await fetch(url, {
