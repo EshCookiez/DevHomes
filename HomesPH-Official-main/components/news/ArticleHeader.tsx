@@ -21,7 +21,7 @@ export function ArticleHeader({
         {title}
       </h1>
       <div className="flex items-center gap-4 text-sm text-gray-600 mb-4 flex-wrap">
-        <span className="font-semibold text-gray-700">UPDATED {updatedTime.toUpperCase()}</span>
+        <span className="font-semibold text-gray-700">Updated {updatedTime}</span>
         <div className="flex items-center gap-2">
           <span>By</span>
           <span className="font-semibold text-gray-700">{author}</span>

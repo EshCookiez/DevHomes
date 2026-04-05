@@ -562,12 +562,8 @@ export default async function NewsPage({
               </div>
 
               {/* ── ADS SPACE ── */}
-              <div className="mt-10 flex justify-center">
-                <div className="w-full max-w-[1051px] h-[195px] rounded-[20px] border border-dashed border-[#1428AE] bg-white flex items-center justify-center">
-                  <span className="text-[60px] sm:text-[80px] md:text-[100px] font-thin text-[#1428AE] text-center" style={{ fontFamily: 'Outfit' }}>
-                    ADS SPACE
-                  </span>
-                </div>
+              <div className="mt-10">
+                <AdBanner />
               </div>
             </>
           )}
@@ -637,13 +633,7 @@ export default async function NewsPage({
 
         {/* ── ADS SPACE 2 ── */}
         <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[230px] mb-10">
-          <div className="flex justify-center">
-            <div className="w-full max-w-[1051px] h-[195px] rounded-[20px] border border-dashed border-[#1428AE] bg-white flex items-center justify-center">
-              <span className="text-[100px] font-thin text-[#1428AE] text-center" style={{ fontFamily: 'Outfit', lineHeight: '100px' }}>
-                ADS SPACE
-              </span>
-            </div>
-          </div>
+          <AdBanner />
         </div>
 
         {/* ── MORE TOP STORIES + REAL ESTATE & PROPERTIES + PHILIPPINE LATEST ── */}
@@ -669,12 +659,7 @@ export default async function NewsPage({
               {/* Right: Philippine Latest + Ad */}
               <div>
                 <div className="mb-[30px]">
-                  <div className="w-full h-[222px] rounded-[15px] border border-dashed border-[#1428AE] flex items-center justify-center">
-                    <span className="text-[80px] text-[#1428AE] text-center" style={{ fontFamily: 'Outfit', fontWeight: 200, lineHeight: '80px' }}>
-                      ADS
-                    </span>
-                  </div>
-                  <p className="text-[15px] font-light text-[#7F7F7F] text-center mt-[5px]" style={{ fontFamily: 'Outfit' }}>Advertisement</p>
+                  <AdBanner sizes={['300x250']} />
                 </div>
                 <p className="text-[15px] font-medium text-[#1428AE] mb-4 uppercase" style={{ fontFamily: 'Outfit' }}>
                   PHILIPPINE LATEST
@@ -736,8 +721,8 @@ export default async function NewsPage({
                 ) : null}
 
                 {/* Right: List of article titles */}
-                <div className="space-y-0">
-                  {latestNewsArticles.slice(1, 11).map((article, index) => (
+                <div className="flex flex-col justify-between lg:h-[559px] overflow-hidden">
+                  {latestNewsArticles.slice(1, 8).map((article, index) => (
                     <div key={article.id}>
                       <Link href={`/news/${article.slug}`} className="group block">
                         <p className="text-[18px] font-light leading-[22px] text-white transition-colors group-hover:text-blue-300 line-clamp-2" style={{ fontFamily: 'Outfit' }}>
@@ -747,7 +732,7 @@ export default async function NewsPage({
                           {timeAgo(article.published_at)}
                         </p>
                       </Link>
-                      {index < 9 && <div className="h-[1px] bg-[#37507A] my-[15px]" />}
+                      {index < 6 && <div className="h-[1px] bg-[#37507A] my-[15px]" />}
                     </div>
                   ))}
                 </div>
