@@ -98,6 +98,43 @@
   animation: hero-scroll-cue-sync 2.1s ease-in-out infinite;
 }
 
+@keyframes commitment-float-a {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes commitment-float-b {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-11px); }
+}
+@keyframes commitment-float-c {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-16px); }
+}
+.commitment-float {
+  will-change: transform, box-shadow;
+  animation-duration: 6.8s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  box-shadow: 0 16px 40px rgba(20, 40, 174, 0.12);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.commitment-float:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 24px 52px rgba(20, 40, 174, 0.2);
+}
+.commitment-float--a {
+  animation-name: commitment-float-a;
+  animation-delay: 0s;
+}
+.commitment-float--b {
+  animation-name: commitment-float-b;
+  animation-delay: 0.35s;
+}
+.commitment-float--c {
+  animation-name: commitment-float-c;
+  animation-delay: 0.7s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-scroll-cue-sync {
     animation: none;
@@ -108,6 +145,9 @@
   .ai-guided-caret {
     animation: none;
     opacity: 1;
+  }
+  .commitment-float {
+    animation: none;
   }
 }
 
