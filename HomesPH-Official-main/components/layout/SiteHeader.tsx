@@ -281,22 +281,22 @@ export default function SiteHeader({
               <Link href="/login" style={{ fontSize: '18px', fontWeight: 400, color: '#002143', textDecoration: 'none' }}>
                 Login
               </Link>
-              <button
-                onClick={() => setShowRegisterModal(true)}
+              <Link
+                href="/registration"
                 style={{
-                  width: '103px',
+                  minWidth: '103px',
                   height: '46px',
                   background: '#1428AE',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: 'none',
-                  cursor: 'pointer'
+                  padding: '0 18px',
+                  textDecoration: 'none'
                 }}
               >
-                <span style={{ fontSize: '18px', fontWeight: 500, color: '#FFFFFF' }}>Sign in</span>
-              </button>
+                <span style={{ fontSize: '18px', fontWeight: 500, color: '#FFFFFF' }}>Sign up</span>
+              </Link>
             </div>
 
             {/* Mobile hamburger */}
