@@ -4,7 +4,7 @@ export const DB_ROLE_TO_ROUTE_SEGMENT = {
   franchise: 'franchise',
   salesperson: 'salesperson',
   buyer: 'buyer',
-  ambassador: 'ambassador',
+  affiliate: 'affiliate',
   developer: 'developer',
   agent: 'agent',
   bank_manager: 'bank-manager',

@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock, User, Phone, BadgeCheck, ShieldCheck, Landmark, Building2 } from 'lucide-react'
 import { registerAccountAction } from '@/app/registration/actions'
-import { trackRecruitmentClick } from '@/components/dashboard/ambassador/actions'
+import { trackRecruitmentClick } from '@/components/dashboard/affiliate/actions'
 import OtpVerifyStep from './OtpVerifyStep'
 
 const schema = z.object({

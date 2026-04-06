@@ -27,7 +27,7 @@ export async function getVanityCodes() {
     return { success: false, codes: [], profileId: profile.id }
   }
 
-   // 1. Fetch recruitment registration stats for this ambassador
+   // 1. Fetch recruitment registration stats for this affiliate
   const { data: registrationStats } = await supabase
     .from('user_profiles')
     .select('role, account_status')
@@ -98,7 +98,7 @@ export async function trackRecruitmentClick(code: string, role: string, source?:
       
       const { data: campaignRecord, error: lookupError } = await admin
         .from('referral_source_metrics')
-        .select('source_name, ambassador_id, campaign_name')
+        .select('source_name, affiliate_id, campaign_name')
         .eq('campaign_name', campaign)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -172,7 +172,7 @@ export async function createVanityCode(code: string) {
     return { success: false, message: 'An error occurred while creating your code.' }
   }
 
-  revalidatePath('/dashboard/ambassador/links')
+  revalidatePath('/dashboard/affiliate/links')
   return { success: true, message: 'Custom vanity code created!' }
 }
 
@@ -191,7 +191,7 @@ export async function deleteVanityCode(id: number) {
     return { success: false, message: 'Failed to delete the code.' }
   }
 
-  revalidatePath('/dashboard/ambassador/links')
+  revalidatePath('/dashboard/affiliate/links')
   return { success: true, message: 'Vanity code deleted!' }
 }
 
@@ -267,12 +267,12 @@ export async function getCampaignStats() {
     
   if (!profile) return { success: false, stats: [] }
 
-  // Fetch click counts grouped by source for this ambassador's codes
+  // Fetch click counts grouped by source for this affiliate's codes
   // Table 'referral_source_metrics' should track: code_id, source_name (e.g. 'Facebook'), clicks
   const { data, error } = await supabase
     .from('referral_source_metrics')
     .select('source_name, campaign_name, clicks, registrations, code_id, referral_codes(code)')
-    .eq('ambassador_id', profile.id)
+    .eq('affiliate_id', profile.id)
 
   if (error) {
     console.error('Error fetching campaign stats:', error)
@@ -307,17 +307,17 @@ export async function createCampaign(code: string, source: string, campaignName:
   const { error } = await supabase
     .from('referral_source_metrics')
     .upsert({
-      ambassador_id: profile.id,
+      affiliate_id: profile.id,
       code_id: codeData.id,
       source_name: source,
       campaign_name: campaignName,
-    }, { onConflict: 'ambassador_id,code_id,source_name,campaign_name' })
+    }, { onConflict: 'affiliate_id,code_id,source_name,campaign_name' })
 
   if (error) {
     console.error('Error creating campaign:', error)
     return { success: false, message: `DB Error: ${error.message} (${error.code})` }
   }
 
-  revalidatePath('/dashboard/ambassador')
+  revalidatePath('/dashboard/affiliate')
   return { success: true, message: `Campaign tracking for ${campaignName} created!` }
 }

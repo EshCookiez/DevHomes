@@ -9,7 +9,7 @@ import {
   type RegistrationCompanySearchOption,
   uploadIdAction,
 } from '@/app/registration/actions'
-import { trackRecruitmentClick } from '@/components/dashboard/ambassador/actions'
+import { trackRecruitmentClick } from '@/components/dashboard/affiliate/actions'
 import OtpVerifyStep from './OtpVerifyStep'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'

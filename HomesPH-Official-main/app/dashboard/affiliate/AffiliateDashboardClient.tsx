@@ -8,7 +8,7 @@ import DataTable from '@/components/dashboard/DataTable'
 import StatusBadge from '@/components/dashboard/StatusBadge'
 import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
-import { createCampaign } from '@/components/dashboard/ambassador/actions'
+import { createCampaign } from '@/components/dashboard/affiliate/actions'
 
 interface ReferralCode {
   id: number
@@ -48,7 +48,7 @@ interface CampaignStat {
   referral_codes?: { code: string } | { code: string }[]
 }
 
-export default function AmbassadorDashboardClient({
+export default function AffiliateDashboardClient({
   initialCodes,
   recruitmentStats,
   chartData,
@@ -214,7 +214,7 @@ export default function AmbassadorDashboardClient({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">Ambassador Dashboard</h1>
+          <h1 className="text-2xl font-black text-slate-900">Affiliate Dashboard</h1>
           <p className="text-sm text-slate-500 mt-1">Track your referrals, links, and commission earnings.</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1428ae] hover:bg-[#0f1f8a] text-white text-sm font-bold transition-colors shadow-sm">

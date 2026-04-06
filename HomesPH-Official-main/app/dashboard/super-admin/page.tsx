@@ -24,7 +24,7 @@ const USERS = [
   { name: 'Juan dela Cruz', email: 'juan@example.com',   role: 'Salesperson', status: 'Active',   joined: 'Jan 20, 2026' },
   { name: 'Ana Reyes',      email: 'ana@example.com',    role: 'Buyer',       status: 'Pending',  joined: 'Feb 2, 2026'  },
   { name: 'Carlos Lim',     email: 'carlos@example.com', role: 'Developer',   status: 'Active',   joined: 'Feb 5, 2026'  },
-  { name: 'Rosa Tan',       email: 'rosa@example.com',   role: 'Ambassador',  status: 'Inactive', joined: 'Feb 9, 2026'  },
+  { name: 'Rosa Tan',       email: 'rosa@example.com',   role: 'Affiliate',  status: 'Inactive', joined: 'Feb 9, 2026'  },
   { name: 'Ben Uy',         email: 'ben@example.com',    role: 'Franchise',   status: 'Active',   joined: 'Feb 11, 2026' },
 ]
 

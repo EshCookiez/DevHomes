@@ -4,7 +4,7 @@ const HIGHLIGHTS: { title: string; description: string; icon: string }[] = [
   {
     title: 'Network Nationwide',
     description:
-      'Our vetted ambassador of agents stretches from the northernmost peaks to the southern keys, so every neighborhood enjoys the same expert care and first-look alerts.',
+      'Our vetted affiliate of agents stretches from the northernmost peaks to the southern keys, so every neighborhood enjoys the same expert care and first-look alerts.',
     icon: '/networkIcon.png',
   },
   {

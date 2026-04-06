@@ -17,7 +17,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { uploadPublicFile, ensureImageFile } from '@/lib/storage'
 
-export type RegistrationRole = 'developer' | 'salesperson' | 'ambassador' | 'franchise' | 'franchise_secretary'
+export type RegistrationRole = 'developer' | 'salesperson' | 'affiliate' | 'franchise' | 'franchise_secretary'
 
 interface BaseRegistrationInput {
   role: RegistrationRole
@@ -66,13 +66,13 @@ interface DeveloperRegistrationInput extends BaseRegistrationInput {
   companyName: string
 }
 
-interface AmbassadorRegistrationInput extends BaseRegistrationInput {
-  role: 'ambassador'
+interface AffiliateRegistrationInput extends BaseRegistrationInput {
+  role: 'affiliate'
 }
 
 export type RegisterAccountInput = 
   | DeveloperRegistrationInput 
-  | AmbassadorRegistrationInput 
+  | AffiliateRegistrationInput 
   | FranchiseRegistrationInput
   | SalespersonRegistrationInput
   | SecretaryRegistrationInput
@@ -214,7 +214,7 @@ function explainInvitationSessionError(message: string | undefined) {
 }
 
 function isRegistrationRole(value: string): value is RegistrationRole {
-  return ['developer', 'salesperson', 'ambassador', 'franchise', 'franchise_secretary'].includes(value)
+  return ['developer', 'salesperson', 'affiliate', 'franchise', 'franchise_secretary'].includes(value)
 }
 
 function normalizeRegistrationRole(role: RegistrationRole): Exclude<RegistrationRole, 'franchise_secretary'> | 'salesperson' {
@@ -781,7 +781,7 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
           const { data: campaignRecord } = await admin
             .from('referral_source_metrics')
             .select('source_name')
-            .eq('ambassador_id', referredById)
+            .eq('affiliate_id', referredById)
             .eq('campaign_name', input.campaign)
             .order('created_at', { ascending: false }) // Get the most recent one if duplicates exist
             .limit(1)
@@ -796,7 +796,7 @@ export async function registerAccountAction(input: RegisterAccountInput): Promis
         }
 
         const { error: rpcError } = await admin.rpc('increment_referral_registration', {
-          p_ambassador_id: referredById,
+          p_affiliate_id: referredById,
           p_code: input.affiliateCode.toUpperCase(),
           p_source: finalSource,
           p_campaign: input.campaign

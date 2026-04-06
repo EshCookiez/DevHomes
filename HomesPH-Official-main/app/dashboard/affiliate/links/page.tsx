@@ -1,11 +1,11 @@
-import { getVanityCodes } from '@/components/dashboard/ambassador/actions'
-import LinksDashboardClient from '@/components/dashboard/ambassador/LinksClient'
+import { getVanityCodes } from '@/components/dashboard/affiliate/actions'
+import LinksDashboardClient from '@/components/dashboard/affiliate/LinksClient'
 import { getCurrentDashboardUser } from '@/lib/auth/user'
 import { redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AmbassadorLinksPage() {
+export default async function AffiliateLinksPage() {
   const user = await getCurrentDashboardUser()
   
   if (!user) {
@@ -17,7 +17,7 @@ export default async function AmbassadorLinksPage() {
   return (
     <LinksDashboardClient 
       initialCodes={codes || []}
-      ambassadorId={user.profileId}
+      affiliateId={user.profileId}
       recruitmentStats={recruitmentStats}
     />
   )

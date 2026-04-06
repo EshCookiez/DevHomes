@@ -18,7 +18,7 @@ interface JoinPageProps {
 const VALID_INVITED_ROLES = new Set([
   'developer',
   'salesperson',
-  'ambassador',
+  'affiliate',
   'franchise',
   'franchise_secretary',
 ])

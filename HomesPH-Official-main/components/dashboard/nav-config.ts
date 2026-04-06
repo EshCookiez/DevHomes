@@ -23,7 +23,7 @@ export const ROLE_META: Record<string, { label: string; badge: string }> = {
   'franchise':    { label: 'Franchise',     badge: 'bg-amber-500'  },
   'salesperson':  { label: 'Salesperson',   badge: 'bg-emerald-500'},
   'buyer':        { label: 'Buyer',         badge: 'bg-cyan-500'   },
-  'ambassador':   { label: 'Ambassador',    badge: 'bg-pink-500'   },
+  'affiliate':   { label: 'Affiliate',    badge: 'bg-pink-500'   },
   'developer':    { label: 'Developer',     badge: 'bg-orange-500' },
   'bank-manager': { label: 'Bank Manager',  badge: 'bg-teal-500'   },
   'secretary':    { label: 'Operations',    badge: 'bg-indigo-500' },
@@ -57,7 +57,7 @@ export const NAV_CONFIG: Record<string, NavGroup[]> = {
       title: 'User Management',
       items: [
         { label: 'Users', href: '/dashboard/users', icon: Users },
-        { label: 'Applications', href: '/dashboard/admin/ambassadors', icon: ClipboardList },
+        { label: 'Applications', href: '/dashboard/admin/affiliates', icon: ClipboardList },
       ],
     },
     {
@@ -115,7 +115,7 @@ export const NAV_CONFIG: Record<string, NavGroup[]> = {
       title: 'User Management',
       items: [
         { label: 'Users', href: '/dashboard/users', icon: Users },
-        { label: 'Applications', href: '/dashboard/admin/ambassadors', icon: ClipboardList },
+        { label: 'Applications', href: '/dashboard/admin/affiliates', icon: ClipboardList },
       ],
     },
     {
@@ -231,12 +231,12 @@ export const NAV_CONFIG: Record<string, NavGroup[]> = {
     },
   ],
 
-  'ambassador': [
-    { items: [{ label: 'Dashboard', href: '/dashboard/ambassador', icon: LayoutDashboard }] },
+  'affiliate': [
+    { items: [{ label: 'Dashboard', href: '/dashboard/affiliate', icon: LayoutDashboard }] },
     {
       title: 'Referrals',
       items: [
-        { label: 'Links & Codes',  href: '/dashboard/ambassador/links',       icon: Link2      },
+        { label: 'Links & Codes',  href: '/dashboard/affiliate/links',       icon: Link2      },
       ],
     },
     {

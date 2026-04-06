@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Link2, Copy, Plus, Hash, Check, Loader2, UserPlus, Trash2 } from 'lucide-react'
-import { createVanityCode, deleteVanityCode } from '@/components/dashboard/ambassador/actions'
+import { createVanityCode, deleteVanityCode } from '@/components/dashboard/affiliate/actions'
 import { toast } from 'sonner'
 
 interface ReferralCode {
@@ -22,11 +22,11 @@ interface RecruitmentStats {
 
 export default function LinksDashboardClient({
   initialCodes,
-  ambassadorId,
+  affiliateId,
   recruitmentStats,
 }: {
   initialCodes: ReferralCode[]
-  ambassadorId: string | null
+  affiliateId: string | null
   recruitmentStats?: RecruitmentStats
 }) {
   const [codes, setCodes] = useState<ReferralCode[]>(initialCodes)
@@ -97,7 +97,7 @@ export default function LinksDashboardClient({
 
   const buildProjectLink = (slug: string) => {
     const domain = typeof window !== 'undefined' ? window.location.origin : 'https://homesph.com'
-    return `${domain}/r/${slug}?ref=${ambassadorId || 'unknown'}`
+    return `${domain}/r/${slug}?ref=${affiliateId || 'unknown'}`
   }
 
   return (
@@ -170,7 +170,7 @@ export default function LinksDashboardClient({
           </div>
 
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Ambassador Tip</h4>
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Affiliate Tip</h4>
             <p className="text-sm text-slate-600 leading-relaxed italic">
               "Your vanity code is unique to you. Mention it in your social media captions or voiceovers to track offline conversions."
             </p>

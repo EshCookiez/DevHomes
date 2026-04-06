@@ -23,7 +23,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-export default function AmbassadorRegisterForm() {
+export default function AffiliateRegisterForm() {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -41,7 +41,7 @@ export default function AmbassadorRegisterForm() {
     setServerError(null)
 
     const result = await registerAccountAction({
-      role: 'ambassador',
+      role: 'affiliate',
       fname: data.fname,
       lname: data.lname,
       email: data.email,
@@ -70,10 +70,10 @@ export default function AmbassadorRegisterForm() {
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 p-1.5 border border-amber-100/50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/public-relation.png" alt="Ambassador" className="w-full h-full object-contain" />
+            <img src="/public-relation.png" alt="Affiliate" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-[#0c1f4a] tracking-tight leading-tight">Ambassador Registration</h1>
+            <h1 className="text-xl font-black text-[#0c1f4a] tracking-tight leading-tight">Affiliate Registration</h1>
             <p className="text-xs text-gray-500 mt-0.5">Start earning via referrals today</p>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function AmbassadorRegisterForm() {
                   Creating account…
                 </span>
               ) : (
-                'Create Ambassador Account'
+                'Create Affiliate Account'
               )}
             </button>
             <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">

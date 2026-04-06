@@ -83,7 +83,7 @@ export const ROLE_META: Record<string, { label: string; badge: string }> = {
   franchise: { label: 'Franchise', badge: 'bg-amber-500' },
   salesperson: { label: 'Salesperson', badge: 'bg-emerald-500' },
   buyer: { label: 'Buyer', badge: 'bg-cyan-500' },
-  ambassador: { label: 'Ambassador', badge: 'bg-pink-500' },
+  affiliate: { label: 'Affiliate', badge: 'bg-pink-500' },
   developer: { label: 'Developer', badge: 'bg-orange-500' },
   agent: { label: 'Agent', badge: 'bg-lime-500' },
   'bank-manager': { label: 'Bank Manager', badge: 'bg-teal-500' },
@@ -211,11 +211,11 @@ const ROLE_DASHBOARD_CONFIG: Record<string, RoleDashboardConfig> = {
     ],
     permissions: { projects: 'view', listings: 'view', 'saved-listings': 'manage-own', 'saved-projects': 'manage-own', inquiries: 'create' },
   },
-  ambassador: {
-    ...ROLE_META.ambassador,
+  affiliate: {
+    ...ROLE_META.affiliate,
     navGroups: [
-      { items: [{ label: 'Dashboard', href: '/dashboard/ambassador', icon: LayoutDashboard }] },
-      { title: 'Referrals', items: [{ label: 'Links & Codes', href: '/dashboard/ambassador/links', icon: Link2 }] },
+      { items: [{ label: 'Dashboard', href: '/dashboard/affiliate', icon: LayoutDashboard }] },
+      { title: 'Referrals', items: [{ label: 'Links & Codes', href: '/dashboard/affiliate/links', icon: Link2 }] },
       { title: 'Account', items: [{ label: 'Profile', href: '/dashboard/profile', icon: Users }] },
     ],
     permissions: { projects: 'view', listings: 'view', 'referral-leads': 'view', reports: 'view' },
