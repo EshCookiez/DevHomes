@@ -3,140 +3,225 @@ import HomeHeader from '@/components/home/HomeHeader'
 import { GENERAL_NAV_ITEMS } from '@/lib/general-nav'
 import { getSiteSettings } from '@/lib/site-settings'
 
-const INTEGRATIONS = [
-  'A dynamic property marketplace',
-  "A dedicated tourism section celebrating the Philippines’ 7,641 islands",
-  'Timely regional news updates',
-  'A curated restaurant directory to highlight thriving local communities',
-]
-
-const MARKET_PROMISE = [
-  'Secure – supported by legal expertise and verified listings',
-  'Transparent – guided by ethical practices',
-  'Data-driven – powered by nationwide reporting and market intelligence',
-]
-
 export default async function OurCompanyPage() {
   const settings = await getSiteSettings()
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-white text-[#1428AE]">
       <HomeHeader
         logoUrl={settings.logoUrl}
         contactEmail={settings.contactEmail}
         contactPhone={settings.contactPhone}
         socialLinks={settings.socialLinks}
         navItems={GENERAL_NAV_ITEMS}
+        topBarLocationLabel="Manila, Philippines"
       />
 
-      <main className="space-y-20 px-4 pb-20">
-        <section className="relative overflow-hidden rounded-[48px] border border-slate-100 bg-gradient-to-br from-white via-[#f0f4ff] to-white px-6 py-16 shadow-[0_45px_120px_rgba(20,40,174,0.25)] md:px-12">
-          <div className="absolute inset-0 opacity-60" aria-hidden>
-            <svg className="absolute -top-12 left-10 h-40 w-40 text-[#f7b500]" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="100" fill="currentColor" />
-            </svg>
-            <svg className="absolute bottom-10 right-20 h-48 w-48 text-[#1428ae]/40" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <rect width="200" height="200" rx="40" fill="currentColor" />
-            </svg>
-          </div>
-          <div className="relative z-10 mx-auto flex max-w-5xl flex-col gap-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.6em] text-[#f7b500]">Our mission</p>
-            <div className="space-y-6 md:space-y-8">
-              <h1 className="text-3xl font-semibold leading-tight text-[#1428ae] md:text-4xl">
-                HOME.ph is built on one simple idea: every Filipino deserves a better, safer, and more transparent way to find and invest in property.
-              </h1>
-              <p className="text-lg text-slate-700 md:text-xl">
-                We are a newly launched multimedia property platform with a bold goal — to revolutionize the Philippine real estate industry.
-                Our aim is to become one of the country’s most trusted property portals by delivering real value for buyers, sellers, franchises,
-                developers, and investors.
+      <main className="mx-auto w-full max-w-[1920px]">
+        <section className="bg-gradient-to-b from-[#EFF1FFCC] to-white px-4 pb-16 pt-10 sm:px-8 lg:px-0 lg:pb-24 lg:pt-20">
+          <div className="mx-auto w-full max-w-[1345px]">
+            <p className="text-center font-[family-name:var(--font-outfit)] text-[34px] font-medium leading-none tracking-[0.3em] text-[#F4AA1D] sm:text-[44px] lg:text-[60px]">
+              OUR MISSION
+            </p>
+
+            <div className="relative mt-8 lg:h-[192px]">
+              <img
+                src="/our-company-logo.png"
+                alt="HomesPH"
+                className="h-[160px] w-[164px] object-contain sm:h-[192px] sm:w-[196px] lg:absolute lg:left-[4px] lg:top-0"
+              />
+
+              <div className="mt-6 max-w-[1111px] space-y-3 sm:space-y-4 lg:absolute lg:left-[226px] lg:top-0 lg:mt-0 lg:h-[192px] lg:w-[1111px] lg:space-y-0">
+                <div className="space-y-3 sm:space-y-4 lg:space-y-0">
+                  <div className="lg:absolute lg:left-0 lg:top-0 lg:flex lg:h-[40px] lg:w-[1111px] lg:items-center lg:gap-[12px]">
+                    <p className="font-[family-name:var(--font-outfit)] text-[30px] font-semibold leading-none text-[#1428AE] sm:text-[40px] lg:h-[40px] lg:w-[210.65px] lg:shrink-0">
+                      HOMES.PH
+                    </p>
+                    <p className="font-[family-name:var(--font-outfit)] text-[20px] font-normal leading-tight text-[#1428AE] sm:text-[25px] sm:leading-[25px] lg:h-[27px] lg:w-[890.22px]">
+                      is built on one simple idea: every Filipino deserves a better,
+                    </p>
+                  </div>
+
+                  <p className="font-[family-name:var(--font-outfit)] text-[20px] font-normal leading-tight text-[#1428AE] sm:text-[25px] sm:leading-[25px] lg:absolute lg:left-0 lg:top-[45px] lg:h-[27px] lg:w-[1111px]">
+                    safer, and more transparent way to find and invest in property.
+                  </p>
+
+                  <p className="pt-1 font-[family-name:var(--font-outfit)] text-[19px] font-normal leading-[1.35] text-[#1428AE] sm:text-[22px] sm:leading-[30px] lg:absolute lg:left-0 lg:top-[102px] lg:h-[90px] lg:w-[1111px] lg:pt-0 lg:text-[22px] lg:leading-[30px]">
+                    We are a newly launched multimedia property platform with a bold goal — to revolutionize the Philippine real estate industry. Our aim is to become one of the country’s most trusted property portals by delivering real value for buyers, sellers, brokers, developers, and investors.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 space-y-3">
+              <p className="font-[family-name:var(--font-outfit)] text-[15px] font-semibold uppercase leading-none tracking-[0.45em] text-[#F4AA1D] sm:text-[22px]">
+                Built on Experience and Scale
+              </p>
+              <p className="font-[family-name:var(--font-outfit)] text-[32px] font-semibold leading-none text-[#1428AE] sm:text-[40px]">
+                A legacy of people and presence
+              </p>
+              <p className="pt-2 font-[family-name:var(--font-outfit)] text-[19px] font-normal leading-[1.35] text-[#1428AE] sm:text-[22px] sm:leading-[30px]">
+                HOME.ph is backed by a management team with more than two decades of Philippine real estate experience. We currently work with over 10,000 real estate practitioners nationwide and operate through 100+ branches that serve as convenient drop-off centers for property owners.
+              </p>
+              <p className="font-[family-name:var(--font-outfit)] text-[19px] font-normal leading-[1.35] text-[#1428AE] sm:text-[22px] sm:leading-[30px]">
+                This strong physical presence bridges the gap between digital listings and real-world service. It ensures that technology is supported by people — real experts who understand local markets.
+              </p>
+              <p className="pt-1 font-[family-name:var(--font-outfit)] text-[28px] font-semibold leading-none tracking-[0.2em] text-[#F4AA1D] sm:text-[40px]">
+                20+ YEARS
               </p>
             </div>
-          </div>
-        </section>
 
-        <section className="mx-auto max-w-5xl space-y-12">
-          <div className="space-y-4 rounded-[32px] border border-[#1428ae]/20 bg-white p-8 shadow-lg">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.5em] text-[#f7b500]">Built on Experience and Scale</p>
-                <h2 className="text-3xl font-semibold text-[#1428ae]">A legacy of people and presence</h2>
-              </div>
-              <span className="rounded-full border border-[#1428ae] px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-[#1428ae]">20+ years</span>
-            </div>
-            <p className="text-base text-slate-600">
-              HOME.ph is backed by a management team with more than two decades of Philippine real estate experience. We currently work with over 10,000 real estate practitioners nationwide and operate through 100+ branches that serve as convenient drop-off centers for property owners.
-            </p>
-            <p className="text-base text-slate-600">
-              This strong physical presence bridges the gap between digital listings and real-world service. It ensures that technology is supported by people — real experts who understand local markets.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-4 rounded-[32px] border border-slate-200 bg-[#fdf6e7] p-8 shadow-[0_25px_70px_rgba(247,181,0,0.18)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#f7b500]">More Than a Listing Site</p>
-              <h3 className="text-2xl font-semibold text-[#1428ae]">An integrated lifestyle platform</h3>
-              <p className="text-sm text-slate-700">
+            <div className="mt-10 rounded-[20px] bg-gradient-to-l from-[#1428AE] to-[#000F73] p-6 sm:p-10">
+              <p className="font-[family-name:var(--font-outfit)] text-[14px] font-semibold uppercase leading-none tracking-[0.35em] text-[#FFE8A6] sm:text-[22px]">
+                More than a listing site
+              </p>
+              <p className="mt-4 font-[family-name:var(--font-outfit)] text-[32px] font-semibold leading-none text-white sm:text-[40px]">
+                An integrated lifestyle platform
+              </p>
+              <p className="mt-5 max-w-[1263px] font-[family-name:var(--font-outfit)] text-[20px] font-normal leading-[1.2] text-white sm:text-[25px] sm:leading-[30px]">
                 HOME.ph is not just a classifieds platform. We are building a complete ecosystem that supports the entire property journey, connecting property with lifestyle, travel, and local business to craft a richer experience.
               </p>
-              <ul className="space-y-3 text-sm text-slate-600">
-                {INTEGRATIONS.map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[#1428ae]" aria-hidden />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-10">
+                <p className="font-[family-name:var(--font-outfit)] text-[20px] font-normal leading-[1.2] text-white sm:text-[25px] sm:leading-[30px]">
+                  A dynamic property marketplace
+                  <br />
+                  A dedicated tourism section celebrating the Philippines’ 7,641 islands
+                </p>
+                <p className="font-[family-name:var(--font-outfit)] text-[20px] font-normal leading-[1.2] text-white sm:text-[25px] sm:leading-[30px]">
+                  Timely regional news updates
+                  <br />
+                  A curated restaurant directory to highlight thriving local communities
+                </p>
+              </div>
             </div>
-            <div className="space-y-4 rounded-[32px] border border-[#1428ae]/30 bg-white p-8 shadow-[0_25px_70px_rgba(20,40,174,0.15)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#1428ae]">Legal Protection and Trusted Guidance</p>
-              <h3 className="text-2xl font-semibold text-slate-900">Legal Homes</h3>
-              <p className="text-sm text-slate-600">
-                Through Legal Homes, our in-house legal advisory platform, users gain access to expert insights and podcasts from lawyers representing every region in the country.
-                This adds a strong layer of protection and credibility — giving buyers and investors confidence that transactions are guided by professional advice and ethical standards.
-              </p>
+
+            <div className="mt-8 grid gap-8 lg:grid-cols-2">
+              <div className="rounded-[20px] bg-gradient-to-l from-[#1428AE] to-[#000F73] p-6 sm:p-10">
+                <p className="font-[family-name:var(--font-outfit)] text-[14px] font-semibold uppercase leading-none tracking-[0.4em] text-[#FFE8A6] sm:text-[15px]">
+                  Legal Protection and Trusted Guidance
+                </p>
+                <p className="mt-4 font-[family-name:var(--font-outfit)] text-[32px] font-semibold leading-none text-white sm:text-[40px]">
+                  Legal Homes
+                </p>
+                <p className="mt-5 font-[family-name:var(--font-outfit)] text-[18px] font-normal leading-[1.35] text-white sm:text-[20px] sm:leading-[28px]">
+                  Through Legal Homes, our in-house legal advisory platform, users gain access to expert insights and podcasts from lawyers representing every region in the country. This adds a strong layer of protection and credibility — giving buyers and investors confidence that transactions are guided by professional advice and ethical standards.
+                </p>
+              </div>
+
+              <div className="rounded-[20px] bg-gradient-to-l from-[#1428AE] to-[#000F73] p-6 sm:p-10">
+                <p className="font-[family-name:var(--font-outfit)] text-[14px] font-semibold uppercase leading-none tracking-[0.35em] text-[#FFE8A6] sm:text-[15px]">
+                  Unmatched Local Intelligence
+                </p>
+                <p className="mt-4 font-[family-name:var(--font-outfit)] text-[32px] font-semibold leading-none text-white sm:text-[40px]">
+                  Ground truth built for scale
+                </p>
+                <p className="mt-5 font-[family-name:var(--font-outfit)] text-[18px] font-normal leading-[1.35] text-white sm:text-[20px] sm:leading-[28px]">
+                  To deliver accurate and up-to-date information, HOME.ph has deployed 300 trained field reporters across cities nationwide. This on-the-ground network provides verified data, community insights, and real-time updates — something no traditional property portal offers at this scale. Combined with our 100+ branches, we are building what we believe is the most accessible and reliable property platform in the country.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl space-y-10">
-          <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.5em] text-[#f7b500]">Unmatched Local Intelligence</p>
-            <h3 className="text-3xl font-semibold text-[#1428ae]">Ground truth built for scale</h3>
-            <p className="text-base text-slate-600">
-              To deliver accurate and up-to-date information, HOME.ph has deployed 300 trained field reporters across cities nationwide. This on-the-ground network provides verified data, community insights, and real-time updates — something no traditional property portal offers at this scale.
-              Combined with our 100+ branches, we are building what we believe is the most accessible and reliable property platform in the country.
+        <section className="px-4 pb-16 pt-6 sm:px-8 lg:px-0 lg:pb-24">
+          <div className="mx-auto w-full max-w-[1345px] text-center">
+            <p className="font-[family-name:var(--font-outfit)] text-[16px] font-semibold uppercase leading-none tracking-[0.45em] text-[#F4AA1D] sm:text-[22px] sm:leading-[22px]">
+              A SECURE, TRANSPARENT, DATA- DRIVEN MARKETPLACE
+            </p>
+            <p className="mt-[25px] font-[family-name:var(--font-outfit)] text-[28px] font-semibold leading-[1.15] text-[#1428AE] sm:text-[35px] sm:leading-[40px]">
+              In an industry where trust is everything, HOME.ph is committed to raising standards.
+            </p>
+
+            <div className="mt-8 grid gap-6 lg:hidden">
+              <div className="commitment-float commitment-float--a rounded-[20px] bg-[#F1F8FF] p-6 text-left">
+                <p className="font-[family-name:var(--font-outfit)] text-[18px] font-bold uppercase leading-[18px] tracking-[0.4em] text-[#1428AE]">
+                  COMMITMENT
+                </p>
+                <p className="mt-5 font-[family-name:var(--font-outfit)] text-[23px] font-light leading-[1.5] text-[#1428AE] sm:text-[25px] sm:leading-[38px]">
+                  Secure – supported by legal expertise and verified listings
+                </p>
+              </div>
+
+              <div className="flex justify-center">
+                <img
+                  src="/our-company-logo.png"
+                  alt="HomesPH"
+                  className="h-[220px] w-[224px] object-contain sm:h-[317px] sm:w-[323px]"
+                />
+              </div>
+
+              <div className="commitment-float commitment-float--b rounded-[20px] bg-[#F1F8FF] p-6 text-left">
+                <p className="font-[family-name:var(--font-outfit)] text-[18px] font-bold uppercase leading-[18px] tracking-[0.4em] text-[#1428AE]">
+                  COMMITMENT
+                </p>
+                <p className="mt-5 font-[family-name:var(--font-outfit)] text-[23px] font-light leading-[1.5] text-[#1428AE] sm:text-[25px] sm:leading-[38px]">
+                  Transparent – guided by ethical practices
+                </p>
+              </div>
+
+              <div className="commitment-float commitment-float--c rounded-[20px] bg-[#F1F8FF] p-6 text-left">
+                <p className="font-[family-name:var(--font-outfit)] text-[18px] font-bold uppercase leading-[18px] tracking-[0.4em] text-[#1428AE]">
+                  COMMITMENT
+                </p>
+                <p className="mt-5 font-[family-name:var(--font-outfit)] text-[23px] font-light leading-[1.5] text-[#1428AE] sm:text-[25px] sm:leading-[38px]">
+                  Data-driven – powered by nationwide reporting and market intelligence
+                </p>
+              </div>
+            </div>
+
+            <div className="relative mt-[55px] hidden h-[530px] lg:block">
+              <div className="commitment-float commitment-float--a absolute left-1/2 top-0 h-[153px] w-[463px] -translate-x-1/2 rounded-[20px] bg-[#F1F8FF] px-[25px] py-[25px] text-left">
+                <p className="font-[family-name:var(--font-outfit)] text-[18px] font-bold uppercase leading-[18px] tracking-[0.4em] text-[#1428AE]">
+                  COMMITMENT
+                </p>
+                <p className="mt-[27px] w-[413px] font-[family-name:var(--font-outfit)] text-[25px] font-light leading-[38px] text-[#1428AE]">
+                  Secure – supported by legal expertise and verified listings
+                </p>
+              </div>
+
+              <img
+                src="/our-company-logo.png"
+                alt="HomesPH"
+                className="absolute left-1/2 top-[203px] h-[317px] w-[323px] -translate-x-1/2 object-contain"
+              />
+
+              <div className="commitment-float commitment-float--b absolute left-[55px] top-[285px] h-[153px] w-[397px] rounded-[20px] bg-[#F1F8FF] px-[25px] py-[25px] text-left">
+                <p className="font-[family-name:var(--font-outfit)] text-[18px] font-bold uppercase leading-[18px] tracking-[0.4em] text-[#1428AE]">
+                  COMMITMENT
+                </p>
+                <p className="mt-[27px] w-[347px] font-[family-name:var(--font-outfit)] text-[25px] font-light leading-[38px] text-[#1428AE]">
+                  Transparent – guided by ethical practices
+                </p>
+              </div>
+
+              <div className="commitment-float commitment-float--c absolute right-[0px] top-[266px] h-[191px] w-[415px] rounded-[20px] bg-[#F1F8FF] px-[25px] py-[25px] text-left">
+                <p className="font-[family-name:var(--font-outfit)] text-[18px] font-bold uppercase leading-[18px] tracking-[0.4em] text-[#1428AE]">
+                  COMMITMENT
+                </p>
+                <p className="mt-[27px] w-[365px] font-[family-name:var(--font-outfit)] text-[25px] font-light leading-[38px] text-[#1428AE]">
+                  Data-driven – powered by nationwide reporting and market intelligence
+                </p>
+              </div>
+            </div>
+
+            <p className="mx-auto mt-12 max-w-[1343px] text-left font-[family-name:var(--font-outfit)] text-[20px] font-light leading-[1.4] text-[#1428AE] sm:text-[25px] sm:leading-[35px] lg:text-center">
+              For mainstream homebuyers, HOME.ph offers clarity and confidence. For developers, CEOs, and institutional investors, it offers scale, reach, and actionable insight.
             </p>
           </div>
-          <div className="relative overflow-hidden rounded-[48px] border border-slate-200 bg-gradient-to-br from-white via-[#e6edff] to-white p-10 shadow-[0_35px_80px_rgba(20,40,174,0.2)]">
-            <div className="pointer-events-none absolute -top-6 right-10 h-24 w-24 rotate-45 rounded-full bg-[#f7b500]/70 blur-[60px]" aria-hidden />
-            <div className="pointer-events-none absolute bottom-6 left-10 h-32 w-32 rounded-full bg-[#1428ae]/40 blur-[80px]" aria-hidden />
-            <div className="relative z-10 space-y-6 text-white">
-              <p className="text-sm uppercase tracking-[0.5em] text-[#1428ae]">A Secure, Transparent, Data-Driven Marketplace</p>
-              <p className="text-lg text-slate-700 md:text-xl">In an industry where trust is everything, HOME.ph is committed to raising standards.</p>
-              <ul className="grid gap-4 text-sm text-slate-800 md:grid-cols-3">
-                {MARKET_PROMISE.map((item) => (
-                  <li key={item} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/60 p-4">
-                    <span className="text-xs uppercase tracking-[0.4em] text-slate-500">Commitment</span>
-                    <span className="text-base font-semibold text-[#1428ae]">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-sm text-slate-600">
-                For mainstream homebuyers, HOME.ph offers clarity and confidence. For developers, CEOs, and institutional investors, it offers scale, reach, and actionable insight.
-              </p>
-            </div>
-          </div>
         </section>
 
-        <section className="mx-auto max-w-5xl space-y-4 text-center">
-          <div className="relative">
-            <div className="pointer-events-none absolute -top-6 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full bg-[#f7b500]/50 blur-[50px]" aria-hidden />
-            <p className="text-xs font-semibold uppercase tracking-[0.5em] text-slate-400">Our promise</p>
+        <section className="px-4 pb-20 pt-6 text-center sm:px-8 lg:px-0 lg:pb-24">
+          <div className="mx-auto w-full max-w-[1345px]">
+            <p className="font-[family-name:var(--font-outfit)] text-[34px] font-medium leading-none tracking-[0.3em] text-[#F4AA1D] sm:text-[44px] lg:text-[60px]">
+              OUR PROMISE
+            </p>
+            <p className="mx-auto mt-8 max-w-[1341px] font-[family-name:var(--font-outfit)] text-[26px] font-semibold leading-[1.3] text-[#1428AE] sm:text-[34px] sm:leading-[1.45] lg:text-[40px] lg:leading-[60px]">
+              We are not just listing properties. We are building the future of real estate in the Philippines — one that connects communities, protects stakeholders, and creates lasting value across all 7,641 islands.
+            </p>
+            <p className="mt-8 font-[family-name:var(--font-outfit)] text-[22px] font-semibold leading-none text-[#F4AA1D] sm:text-[25px]">
+              HOME.ph — Where every property story begins.
+            </p>
           </div>
-          <h2 className="text-3xl font-semibold text-[#1428ae] md:text-4xl">
-            We are not just listing properties. We are building the future of real estate in the Philippines — one that connects communities, protects stakeholders, and creates lasting value across all 7,641 islands.
-          </h2>
-          <p className="text-sm text-slate-500">HOME.ph — Where every property story begins.</p>
         </section>
       </main>
 
